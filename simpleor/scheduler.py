@@ -113,7 +113,7 @@ class ScheduleSolver(Solver):
             self._get_finish_if_started_constraints()
         )
         self.no_operation_if_no_finish_constraint_list = (
-            self._get_no_start_or_active_if_no_finish_constraints()
+            self._get_no_start_if_finish_impossible_constraints()
         )
         self.constraints_list = [
             *self.max_one_start_per_task_constraints_list,
@@ -146,7 +146,6 @@ class ScheduleSolver(Solver):
                     )
         return not_allowed_constraint_list
 
-    # TODO: fix range for t!
     def _get_finish_if_started_constraints(self) -> List:
         finish_if_started_constraint_list = []
         for i, current_task_duration in enumerate(self.task_durations):
@@ -160,7 +159,7 @@ class ScheduleSolver(Solver):
                     )
         return finish_if_started_constraint_list
 
-    def _get_no_start_or_active_if_no_finish_constraints(self) -> List:
+    def _get_no_start_if_finish_impossible_constraints(self) -> List:
         no_do_if_no_finish_constraint_list = []
         for i, current_task_duration in enumerate(self.task_durations):
             current_latest_start = self.n_timeslots - self.task_durations[i]
@@ -170,17 +169,6 @@ class ScheduleSolver(Solver):
                         self.start_variables_np[i, j, t] == 0
                     )
         return no_do_if_no_finish_constraint_list
-
-    # def _get_finish_if_started_constraints(self):
-    #     finish_if_started_constraint_list = []
-    #     for i, current_task_duration in enumerate(self.task_durations):
-    #         current_latest_start = self.n_timeslots - self.task_durations[i]
-    #         for j in range(self.n_operators):
-    #             for t_start in range(0, current_latest_start):
-    #                 for t_running in range(t_start, t_start + current_task_duration + 1):
-    #                     finish_if_started_constraint_list.append(
-    #                         self.start_variables_np[i, j, t_start] == self.active_variables_np[i, j, t_running]
-    #                     )
 
     def _get_one_task_simultaneous_constraints(self) -> List:
         one_task_simultaneous_list = []
