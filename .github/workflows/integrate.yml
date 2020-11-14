@@ -20,6 +20,8 @@ jobs:
             - name: Print current working directory and files
               run: pwd
             - name: print files
-              run: ls
+              run: |
+                /bin/bash
+                ls -la
             - name: Run tox
               run: tox -e py
