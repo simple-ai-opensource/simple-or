@@ -5,39 +5,39 @@ from abc import ABCMeta, abstractmethod
 
 class Solver(metaclass=ABCMeta):
     @abstractmethod
-    def validate_input(self, *args, **kwargs):
+    def validate_input(self):
         pass
 
     @abstractmethod
-    def set_problem(self, *args, **kwargs):
+    def set_problem(self):
         pass
 
     @abstractmethod
-    def _set_variables(self, *args, **kwargs):
+    def _set_variables(self):
         pass
 
     @abstractmethod
-    def _set_objective(self, *args, **kwargs):
+    def _set_objective(self):
         pass
 
     @abstractmethod
-    def _set_constraints(self, *args, **kwargs):
+    def _set_constraints(self):
         pass
 
     @abstractmethod
-    def solve(self, *args, **kwargs):
+    def solve(self):
         pass
 
     @abstractmethod
-    def get_status(self, *args, **kwargs):
+    def get_status(self):
         pass
 
     @abstractmethod
-    def get_objective_value(self, *args, **kwargs):
+    def get_objective_value(self):
         pass
 
     @abstractmethod
-    def get_solution(self, *args, **kwargs):
+    def get_solution(self):
         pass
 
 
