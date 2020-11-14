@@ -18,11 +18,5 @@ jobs:
                 python-version: ${{ matrix.python }}
             - name: Install Tox and any other packages
               run: pip install tox
-            - name: Print current working directory and files
-              run: pwd
-            - name: print files
-              run: |
-                /bin/bash
-                ls -la
             - name: Run tox
-              run: tox -e py
+              run: python -m tox -e py
