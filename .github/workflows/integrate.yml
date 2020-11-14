@@ -18,4 +18,4 @@ jobs:
             - name: Install Tox and any other packages
               run: pip install tox
             - name: Run tox
-              run: tox -e py
+              run: tox
