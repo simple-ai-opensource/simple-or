@@ -19,17 +19,17 @@ test_input = [  # task duration, available schedule
 ]
 
 test_solution = [  # task duration, available_schedule
-    # test input 0
+    # expected output 0
     [],  # nothing gets scheduled
-    # test input 1
+    # expected output 1
     [(0, 0, (0, 2))],  # task 0 on machine 0, start at t=0, end at t=2
-    # test input 2
+    # expected output 2
     [(0, 0, (0, 2)), (1, 1, (2, 5))],
-    # test input 3
+    # expected output 3
     [(0, 0, (0, 1)), (1, 1, (0, 2))],
-    # test input 4
+    # expected output 4
     [(0, 0, (0, 2)), (1, 1, (3, 4)), (2, 0, (3, 6))],
-    # test input 5
+    # expected output 5
     [(0, 0, (0, 1)), (1, 0, (2, 4)), (2, 1, (1, 4))],
 ]
 
