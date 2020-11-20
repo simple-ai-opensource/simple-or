@@ -103,7 +103,7 @@ class ScheduleSolver(Solver):
         self.max_one_start_per_task_constraints_list = (
             self._get_max_one_start_per_task_constraints()
         )
-        self.operate_or_start_not_allowed_constraint_list = (
+        self.operate_or_start_not_available_constraint_list = (
             self._get_operate_and_start_not_allowed_constraints()
         )
         self.one_task_simultaneous_constraint_list = (
@@ -112,15 +112,15 @@ class ScheduleSolver(Solver):
         self.finish_if_started_constraint_list = (
             self._get_finish_if_started_constraints()
         )
-        self.no_operation_if_no_finish_constraint_list = (
-            self._get_no_start_if_finish_impossible_constraints()
+        self.start_only_if_available_constraint_list = (
+            self._get_start_only_if_available()
         )
         self.constraints_list = [
             *self.max_one_start_per_task_constraints_list,
-            *self.operate_or_start_not_allowed_constraint_list,
+            *self.operate_or_start_not_available_constraint_list,
             *self.one_task_simultaneous_constraint_list,
             *self.finish_if_started_constraint_list,
-            *self.no_operation_if_no_finish_constraint_list,
+            *self.start_only_if_available_constraint_list,
         ]
 
     def _get_max_one_start_per_task_constraints(self) -> List:
@@ -159,16 +159,21 @@ class ScheduleSolver(Solver):
                     )
         return finish_if_started_constraint_list
 
-    def _get_no_start_if_finish_impossible_constraints(self) -> List:
-        no_do_if_no_finish_constraint_list = []
-        for i, current_task_duration in enumerate(self.task_durations):
-            current_latest_start = self.n_timeslots - self.task_durations[i]
+    def _get_start_only_if_available(self) -> List:
+        constraints = []
+        for i, task_duration in enumerate(self.task_durations):
             for j in range(self.n_operators):
-                for t in range(current_latest_start + 1, self.n_timeslots):
-                    no_do_if_no_finish_constraint_list.append(
-                        self.start_variables_np[i, j, t] == 0
+                latest_start = self.n_timeslots - task_duration
+                for t in range(latest_start + 1):
+                    start_not_allowed = (
+                        sum(self.available_timeslots_np[j, t : t + task_duration])
+                        < task_duration
                     )
-        return no_do_if_no_finish_constraint_list
+                    if start_not_allowed:
+                        constraints.append(self.start_variables_np[i, j, t] == 0)
+                for t in range(latest_start + 1, self.n_timeslots):
+                    constraints.append(self.start_variables_np[i, j, t] == 0)
+        return constraints
 
     def _get_one_task_simultaneous_constraints(self) -> List:
         one_task_simultaneous_list = []
