@@ -1,6 +1,7 @@
 # clients.py
 
 from typing import List, Tuple
+from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ logger = logging.getLogger(f"{__name__}")
 
 PROBLEM_NAME = "The_Schedule_Problem"
 READ_OPTIONS = ["csv", "excel"]
+WRITE_OPTIONS = ["csv", "excel"]
 
 
 @dataclass
@@ -218,7 +220,7 @@ class ScheduleSolver(Solver):
     def _get_one_pulp_variable_value(pulp_variable):
         return pulp_variable.value()
 
-    def get_solution(self):
+    def get_solution(self) -> List:
         start_variable_values_np = np.vectorize(self._get_one_pulp_variable_value)(
             self.start_variables_np
         ).astype(int)
@@ -228,11 +230,29 @@ class ScheduleSolver(Solver):
             (
                 task_started[i],
                 on_machine[i],
-                (at_time[i], at_time[i] + self.task_durations[i]),
+                at_time[i],
+                at_time[i] + self.task_durations[i],
+                self.task_durations[i],
             )
             for i in range(len(task_started))
         ]
         return solution
+
+    def write_solution(self, directory: str, filename: str, how: str):
+        solution_list = self.get_solution()
+        full_path = Path(directory).joinpath(Path(filename))
+        solution_df = pd.DataFrame(
+            data=solution_list,
+            columns=["task", "agent", "start", "stop", "task_duration"],
+        )
+        if how == "csv":
+            solution_df.to_csv(full_path, index=False)
+        elif how == "excel":
+            solution_df.to_excel(full_path, index=False)
+        else:
+            raise ValueError(
+                f"how = {how} not in WRITE_OPTIONS. " f"Choose from {WRITE_OPTIONS}"
+            )
 
 
 @dataclass
@@ -384,4 +404,9 @@ if __name__ == "__main__":
     )
     logger.info(
         f"Solution (task - on machine - active): {schedule_solver.get_solution()}"
+    )
+    logger.info("----------------------------------------------")
+    logger.info("Writing solution to data/scheduler")
+    schedule_solver.write_solution(
+        directory="../data/scheduler", filename="solution.csv", how="csv"
     )
