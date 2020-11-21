@@ -2,12 +2,11 @@
 Usage
 =====
 
+Scheduler
+---------
 Currently, simpleor only has a scheduler, but this will be
 extended in the future.
 
----------
-Scheduler
----------
 With the scheduler you can optimize the assignment of task to agents.
 All tasks have an integer duration, and all agents have an available schedule.
 
@@ -54,3 +53,5 @@ task_id, agent_id, start_time, stop_time, task_duration
         (0, 0, 0, 2, 2),
         (1, 1, 2, 5, 3),
     ]
+
+TODO: command line and generator documentation

@@ -23,10 +23,9 @@ Package to solve Operations Research problems.
 * Documentation: https://simpleor.readthedocs.io.
 
 
-Features
---------
+.. include:: docs/installation.rst
+.. include:: docs/usage.rst
 
-* TODO
 
 Credits
 -------
