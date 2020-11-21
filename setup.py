@@ -10,16 +10,9 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = [
-    "Click>=7.0",
-    "numpy",
-    "pulp",
-    ""
-]
+requirements = ["Click>=7.0", "numpy", "pulp", "pandas"]
 
-test_requirements = [
-    "pytest>=3",
-]
+test_requirements = ["pytest>=3"]
 
 setup(
     author="Lennart Damen",
@@ -30,18 +23,11 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
     description="Package to solve Operations Research problems.",
-    entry_points={
-        "console_scripts": [
-            "simpleor=simpleor.cli:main",
-        ],
-    },
+    entry_points={"console_scripts": ["schedule=simpleor.cli:schedule"]},
     install_requires=requirements,
     license="GNU General Public License v3",
     long_description=readme + "\n\n" + history,

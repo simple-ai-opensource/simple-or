@@ -1,15 +1,19 @@
 # scheduler.py
 
-from typing import List
+from typing import List, Tuple
+from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
-from simpleor.base import Solver, Generator
+from simpleor.base import Solver, Generator, PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 
 PROBLEM_NAME = "The_Schedule_Problem"
+READ_OPTIONS = ["csv", "excel"]
+WRITE_OPTIONS = ["csv", "excel"]
 
 
 @dataclass
@@ -216,7 +220,7 @@ class ScheduleSolver(Solver):
     def _get_one_pulp_variable_value(pulp_variable):
         return pulp_variable.value()
 
-    def get_solution(self):
+    def get_solution(self) -> List:
         start_variable_values_np = np.vectorize(self._get_one_pulp_variable_value)(
             self.start_variables_np
         ).astype(int)
@@ -226,11 +230,30 @@ class ScheduleSolver(Solver):
             (
                 task_started[i],
                 on_machine[i],
-                (at_time[i], at_time[i] + self.task_durations[i]),
+                at_time[i],
+                at_time[i] + self.task_durations[i],
+                self.task_durations[i],
             )
             for i in range(len(task_started))
         ]
         return solution
+
+    def write_solution(self, directory: str, filename: str, how: str):
+        solution_list = self.get_solution()
+        full_path = Path(directory).joinpath(Path(filename))
+        logger.info(f"Writing solution to {full_path}")
+        solution_df = pd.DataFrame(
+            data=solution_list,
+            columns=["task", "agent", "start", "stop", "task_duration"],
+        )
+        if how == "csv":
+            solution_df.to_csv(full_path, index=False)
+        elif how == "excel":
+            solution_df.to_excel(full_path, index=False)
+        else:
+            raise ValueError(
+                f"how = {how} not in WRITE_OPTIONS. " f"Choose from {WRITE_OPTIONS}"
+            )
 
 
 @dataclass
@@ -306,6 +329,53 @@ class ScheduleGenerator(Generator):
         return allowed_start_times
 
 
+def read_schedule_problem(
+    task_durations_file_path: str, available_schedule_file_path: str, how: str, **kwargs
+) -> Tuple:
+    logger.info(
+        f"Reading data from {task_durations_file_path} and {available_schedule_file_path} with how={how}..."
+    )
+    if how == "csv":
+        task_durations_df = pd.read_csv(
+            task_durations_file_path, header=None, dtype=int, **kwargs
+        )
+        available_schedule_df = pd.read_csv(
+            available_schedule_file_path, header=None, dtype=bool, **kwargs
+        )
+    elif how == "excel":
+        task_durations_df = pd.read_excel(task_durations_file_path, dtype=int, **kwargs)
+        available_schedule_df = pd.read_excel(
+            available_schedule_file_path, dtype=bool, **kwargs
+        )
+    else:
+        raise ValueError(
+            f"how = {how} not in READ_OPTIONS. " f"Choose from {READ_OPTIONS}"
+        )
+
+    validate_task_data(task_durations=task_durations_df)
+    validate_schedule_data(available_schedule=available_schedule_df)
+
+    task_durations = task_durations_df.values[:, 0].tolist()
+    available_schedule = available_schedule_df.values.tolist()
+
+    return task_durations, available_schedule
+
+
+def validate_task_data(task_durations: pd.DataFrame):
+    assert (
+        task_durations.notnull().all().all()
+    ), f"Some task durations are missing: {task_durations}"
+    assert (
+        len(task_durations.columns) == 1
+    ), f"Multiple columns for task durations data: {task_durations}"
+
+
+def validate_schedule_data(available_schedule: pd.DataFrame):
+    assert (
+        available_schedule.notnull().all().all()
+    ), f"Some task schedule data is missing: {available_schedule}"
+
+
 if __name__ == "__main__":
     schedule_generator = ScheduleGenerator(
         n_operators=5,
@@ -338,4 +408,11 @@ if __name__ == "__main__":
     )
     logger.info(
         f"Solution (task - on machine - active): {schedule_solver.get_solution()}"
+    )
+    logger.info("----------------------------------------------")
+    logger.info("Writing solution to data/scheduler")
+    schedule_solver.write_solution(
+        directory=str(PROJECT_DIRECTORY.joinpath("data/scheduler")),
+        filename="solution.csv",
+        how="csv",
     )
