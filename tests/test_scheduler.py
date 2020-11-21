@@ -2,7 +2,7 @@
 
 import pytest
 from simpleor.scheduler import ScheduleSolver, read_schedule_problem
-
+from simpleor.base import PROJECT_DIRECTORY
 
 test_input = [  # task duration, available schedule
     # test input 0
@@ -50,8 +50,12 @@ def test_schedule_solver(test_input, expected):
 def test_read_schedule_problem():
     # csv
     task_durations, available_schedule = read_schedule_problem(
-        task_durations_file_path="../data/test/scheduler/task_durations.csv",
-        available_schedule_file_path="../data/test/scheduler/available_schedule.csv",
+        task_durations_file_path=PROJECT_DIRECTORY.joinpath(
+            "data/test/scheduler/task_durations.csv"
+        ),
+        available_schedule_file_path=PROJECT_DIRECTORY.joinpath(
+            "data/test/scheduler/available_schedule.csv"
+        ),
         how="csv",
     )
 
