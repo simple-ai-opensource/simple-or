@@ -1,7 +1,8 @@
 # test_scheduler.py
 
 import pytest
-from simpleor.scheduler import ScheduleSolver
+from simpleor.scheduler import ScheduleSolver, read_schedule_problem
+
 
 test_input = [  # task duration, available schedule
     # test input 0
@@ -44,3 +45,15 @@ def test_schedule_solver(test_input, expected):
     schedule_solver.solve()
     solution = schedule_solver.get_solution()
     assert solution == expected
+
+
+def test_read_schedule_problem():
+    # csv
+    task_durations, available_schedule = read_schedule_problem(
+        task_durations_file_path="../data/test/scheduler/task_durations.csv",
+        available_schedule_file_path="../data/test/scheduler/available_schedule.csv",
+        how="csv",
+    )
+
+    assert task_durations == [3, 2]
+    assert available_schedule == [[1, 1, 0, 0, 0], [0, 0, 1, 1, 1]]

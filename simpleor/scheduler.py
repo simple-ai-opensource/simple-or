@@ -1,8 +1,9 @@
-# scheduler.py
+# clients.py
 
-from typing import List
+from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
 from simpleor.base import Solver, Generator
@@ -10,6 +11,7 @@ from simpleor.base import Solver, Generator
 logger = logging.getLogger(f"{__name__}")
 
 PROBLEM_NAME = "The_Schedule_Problem"
+READ_OPTIONS = ["csv", "excel"]
 
 
 @dataclass
@@ -304,6 +306,50 @@ class ScheduleGenerator(Generator):
             index += 1
 
         return allowed_start_times
+
+
+def read_schedule_problem(
+    task_durations_file_path: str, available_schedule_file_path: str, how: str, **kwargs
+) -> Tuple:
+    if how == "csv":
+        task_durations_df = pd.read_csv(
+            task_durations_file_path, header=None, dtype=int, **kwargs
+        )
+        available_schedule_df = pd.read_csv(
+            available_schedule_file_path, header=None, dtype=bool, **kwargs
+        )
+    elif how == "excel":
+        task_durations_df = pd.read_excel(task_durations_file_path, dtype=int, **kwargs)
+        available_schedule_df = pd.read_excel(
+            available_schedule_file_path, dtype=bool, **kwargs
+        )
+    else:
+        raise ValueError(
+            f"how = {how} not in READ_OPTIONS. " f"Choose from {READ_OPTIONS}"
+        )
+
+    validate_task_data(task_durations=task_durations_df)
+    validate_schedule_data(available_schedule=available_schedule_df)
+
+    task_durations = task_durations_df.values[:, 0].tolist()
+    available_schedule = available_schedule_df.values.tolist()
+
+    return task_durations, available_schedule
+
+
+def validate_task_data(task_durations: pd.DataFrame):
+    assert (
+        task_durations.notnull().all().all()
+    ), f"Some task durations are missing: {task_durations}"
+    assert (
+        len(task_durations.columns) == 1
+    ), f"Multiple columns for task durations data: {task_durations}"
+
+
+def validate_schedule_data(available_schedule: pd.DataFrame):
+    assert (
+        available_schedule.notnull().all().all()
+    ), f"Some task schedule data is missing: {available_schedule}"
 
 
 if __name__ == "__main__":
