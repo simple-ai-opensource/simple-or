@@ -1,4 +1,4 @@
-# clients.py
+# scheduler.py
 
 from typing import List, Tuple
 from pathlib import Path
@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
-from simpleor.base import Solver, Generator
+from simpleor.base import Solver, Generator, PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 
@@ -241,6 +241,7 @@ class ScheduleSolver(Solver):
     def write_solution(self, directory: str, filename: str, how: str):
         solution_list = self.get_solution()
         full_path = Path(directory).joinpath(Path(filename))
+        logger.info(f"Writing solution to {full_path}")
         solution_df = pd.DataFrame(
             data=solution_list,
             columns=["task", "agent", "start", "stop", "task_duration"],
@@ -331,6 +332,9 @@ class ScheduleGenerator(Generator):
 def read_schedule_problem(
     task_durations_file_path: str, available_schedule_file_path: str, how: str, **kwargs
 ) -> Tuple:
+    logger.info(
+        f"Reading data from {task_durations_file_path} and {available_schedule_file_path} with how={how}..."
+    )
     if how == "csv":
         task_durations_df = pd.read_csv(
             task_durations_file_path, header=None, dtype=int, **kwargs
@@ -408,5 +412,7 @@ if __name__ == "__main__":
     logger.info("----------------------------------------------")
     logger.info("Writing solution to data/scheduler")
     schedule_solver.write_solution(
-        directory="../data/scheduler", filename="solution.csv", how="csv"
+        directory=str(PROJECT_DIRECTORY.joinpath("data/scheduler")),
+        filename="solution.csv",
+        how="csv",
     )

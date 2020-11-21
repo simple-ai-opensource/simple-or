@@ -3,10 +3,13 @@
 from abc import ABCMeta, abstractmethod
 import logging
 import sys
+import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 LOGGING_LEVELS = ["debug", "info", "critical"]
+PROJECT_DIRECTORY = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
 
 def _configure_logger(verbose: str):
