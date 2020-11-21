@@ -23,15 +23,15 @@ test_solution = [  # task duration, available_schedule
     # expected output 0
     [],  # nothing gets scheduled
     # expected output 1
-    [(0, 0, (0, 2))],  # task 0 on machine 0, start at t=0, end at t=2
+    [(0, 0, 0, 2, 2)],  # task 0 on machine 0, start at t=0, end at t=2
     # expected output 2
-    [(0, 0, (0, 2)), (1, 1, (2, 5))],
+    [(0, 0, 0, 2, 2), (1, 1, 2, 5, 3)],
     # expected output 3
-    [(0, 0, (0, 1)), (1, 1, (0, 2))],
+    [(0, 0, 0, 1, 1), (1, 1, 0, 2, 2)],
     # expected output 4
-    [(0, 0, (0, 2)), (1, 1, (3, 4)), (2, 0, (3, 6))],
+    [(0, 0, 0, 2, 2), (1, 1, 3, 4, 1), (2, 0, 3, 6, 3)],
     # expected output 5
-    [(0, 0, (0, 1)), (1, 0, (2, 4)), (2, 1, (1, 4))],
+    [(0, 0, 0, 1, 1), (1, 0, 2, 4, 2), (2, 1, 1, 4, 3)],
 ]
 
 pytest_parameters = list(zip(test_input, test_solution))
