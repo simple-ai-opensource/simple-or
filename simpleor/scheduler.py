@@ -1,6 +1,6 @@
 # scheduler.py
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
@@ -258,18 +258,40 @@ class ScheduleSolver(Solver):
 
 @dataclass
 class ScheduleGenerator(Generator):
+    """ Generates a scheduling problem.
+
+    Args:
+        n_operators (int): number of operators
+        n_timeslots (int): number of timeslots
+        n_tasks (int): number of tasks
+        min_task_duration (int, optional): minimum task duration. Defaults to 1.
+        max_task_duration (int): maximum task duration. Defaults to n_timeslots.
+        min_block_duration (int): minimum number of consecutive timeslots
+                            that an operator has to be available. Defaults to 1.
+                            (e.g. min_block_duration = 3 implies
+                            that the operator is either not available
+                            or available for at least 3 timeslots consecutively)
+        max_block_duration (int): maximum number of consecutive timeslots
+                            that an operator has to be available. Defaults to n_timeslots.
+    """
+
     n_operators: int
     n_timeslots: int
     n_tasks: int
-    min_task_duration: int
-    max_task_duration: int
-    min_block_duration: int
-    max_block_duration: int
+    min_task_duration: Optional[int] = 1
+    max_task_duration: Optional[int] = None
+    min_block_duration: Optional[int] = 1
+    max_block_duration: Optional[int] = None
 
     def __post_init__(self):
         self.max_n_blocks = (
             int(self.n_timeslots / self.min_block_duration) + 1
         ) * self.n_operators
+
+        if self.max_task_duration is None:
+            self.max_task_duration = self.n_timeslots
+        if self.max_block_duration is None:
+            self.max_block_duration = self.n_timeslots
 
     def generate(self):
         self._generate_tasks()
