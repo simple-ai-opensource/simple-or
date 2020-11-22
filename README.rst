@@ -22,12 +22,6 @@ Package to solve Operations Research problems.
 * Free software: GNU General Public License v3
 * Documentation: https://simpleor.readthedocs.io.
 
-
-Features
---------
-
-* TODO
-
 Credits
 -------
 

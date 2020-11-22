@@ -1,5 +1,3 @@
-.. highlight:: shell
-
 ============
 Installation
 ============
@@ -8,19 +6,7 @@ Installation
 Stable release
 --------------
 
-To install simpleor, run this command in your terminal:
-
-.. code-block:: console
-
-    $ pip install simpleor
-
-This is the preferred method to install simpleor, as it will always install the most recent stable release.
-
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+TODO: Simple OR is not yet available from PyPI.
 
 
 From sources
@@ -44,7 +30,7 @@ Once you have a copy of the source, you can install it with:
 
 .. code-block:: console
 
-    $ python setup.py install
+    $ pip install .
 
 
 .. _Github repo: https://github.com/lennartdamen/simpleor

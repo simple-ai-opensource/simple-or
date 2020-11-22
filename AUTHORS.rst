@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Lennart Damen <lennart.damen@hotmail.com>
+* Lennart Damen <lennart.damen.ai@gmail.com>
 
 Contributors
 ------------

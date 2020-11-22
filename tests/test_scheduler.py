@@ -1,8 +1,17 @@
 # test_scheduler.py
 
+# https://stackoverflow.com/questions/34406848/mocking-a-class-method-and-changing-some-object-attributes-in-python
+
 import pytest
-from simpleor.scheduler import ScheduleSolver, read_schedule_problem
+import pandas as pd
+import logging
+from pandas.testing import assert_frame_equal
+import numpy as np
+from unittest.mock import patch
+from simpleor.scheduler import ScheduleSolver, ScheduleGenerator, read_schedule_problem
 from simpleor.base import PROJECT_DIRECTORY
+
+logger = logging.getLogger(f"{__name__}")
 
 test_input = [  # task duration, available schedule
     # test input 0
@@ -37,14 +46,72 @@ test_solution = [  # task duration, available_schedule
 pytest_parameters = list(zip(test_input, test_solution))
 
 
+@patch("simpleor.scheduler.ScheduleSolver.vectorized_get_solution_value")
+def test__set_solution(mock_vect_get_solution_value):
+    task_durations = [7, 4, 3]
+    available_timeslots = [
+        [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+    ]
+    mock_start_variables_np = np.array(
+        [
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+            [[0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]],
+        ]
+    )
+    mock_active_variables_np = mock_start_variables_np  # irrelevant
+    mock_vect_get_solution_value.side_effect = [
+        mock_start_variables_np,
+        mock_active_variables_np,
+    ]
+
+    mock_solver = ScheduleSolver(
+        task_durations=task_durations, available_timeslots=available_timeslots
+    )
+    mock_solver.start_variables_np = None
+    mock_solver.active_variables_np = None
+    mock_solver._set_solution()
+
+    expected = pd.DataFrame(
+        data=[[1, 0, 1, 5, 4], [2, 1, 2, 5, 3]],
+        columns=["task", "agent", "start", "stop", "task_duration"],
+    )
+    assert_frame_equal(mock_solver.solution_df, expected)
+
+
 @pytest.mark.parametrize("test_input, expected", pytest_parameters)
 def test_schedule_solver(test_input, expected):
+    logger.info("Testing solver...")
+    logger.info("Hardcoded tests...")
     schedule_solver = ScheduleSolver(
         task_durations=test_input[0], available_timeslots=test_input[1]
     )
     schedule_solver.solve()
     solution = schedule_solver.get_solution()
     assert solution == expected
+
+    # Random generation
+    logger.info("Random tests...")
+    generator_parameters = [*[[3, 5, 7]] * 10]  # operators, timeslots, tasks
+    for i, args in enumerate(generator_parameters):
+        logger.info(f"Now at test {i + 1}/{len(generator_parameters)}...")
+        generator = ScheduleGenerator(*args)
+        generator.generate()
+        solver = ScheduleSolver(
+            task_durations=generator.task_durations,
+            available_timeslots=generator.available_timeslots,
+        )
+        solver.set_problem()
+        solver.solve()
+        solution_df = solver.get_solution(kind="dataframe")
+        agent_busy_np = np.zeros((args[0], args[1]), dtype=int)
+
+        for i, row in solution_df.iterrows():
+            agent_busy_np[row["agent"], row["start"] : row["stop"]] += 1
+        available_timeslots_np = np.array(generator.available_timeslots)
+        schedule_okay = agent_busy_np - available_timeslots_np
+        assert (schedule_okay <= 0).all()
 
 
 def test_read_schedule_problem():
