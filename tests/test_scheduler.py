@@ -93,11 +93,7 @@ def test_schedule_solver(test_input, expected):
 
     # Random generation
     logger.info("Random tests...")
-    generator_parameters = [  # operators, timeslots, tasks
-        *[[2, 5, 2]] * 10,
-        *[[2, 10, 3]] * 10,
-        *[[5, 24, 10]] * 3,
-    ]
+    generator_parameters = [*[[3, 5, 7]] * 10]  # operators, timeslots, tasks
     for i, args in enumerate(generator_parameters):
         logger.info(f"Now at test {i + 1}/{len(generator_parameters)}...")
         generator = ScheduleGenerator(*args)
