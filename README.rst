@@ -22,11 +22,6 @@ Package to solve Operations Research problems.
 * Free software: GNU General Public License v3
 * Documentation: https://simpleor.readthedocs.io.
 
-.. include:: docs/installation.rst
-.. include:: docs/usage.rst
-
-.. include:: AUTHORS.rst
-
 Credits
 -------
 
