@@ -121,16 +121,12 @@ class ScheduleSolver(Solver):
         self.start_only_if_available_constraint_list = (
             self._get_start_only_if_available()
         )
-        # self.if_active_all_others_inactive_constraint_list = (
-        #     self._get_if_active_all_others_inactive()
-        # )
         self.constraints_list = [
             *self.max_one_start_per_task_constraints_list,
             *self.operate_or_start_not_available_constraint_list,
             *self.one_task_simultaneous_constraint_list,
             *self.finish_if_started_constraint_list,
             *self.start_only_if_available_constraint_list,
-            # *self.if_active_all_others_inactive_constraint_list,
         ]
 
     def _get_max_one_start_per_task_constraints(self) -> List:
@@ -194,21 +190,6 @@ class ScheduleSolver(Solver):
                     lpSum([self.active_variables_np[:, j, t]]) <= 1
                 )
         return one_task_simultaneous_list
-
-    # def _get_if_active_all_others_inactive(self) -> List:
-    #     one_active_list = []
-    #     for i in range(self.n_tasks):
-    #         for j in range(self.n_agents):
-    #             for t in range(self.n_timeslots):
-    #                 other_tasks = [ii for ii in range(self.n_tasks) if ii != i]
-    #                 for ii in other_tasks:
-    #                     one_active_list.append(
-    #                         self.active_variables_np[i, j, t] * self.big_m >= self.active_variables_np[ii, j, t]
-    #                     )
-    #                     one_active_list.append(
-    #                         self.active_variables_np[i, j, t] * self.big_m >= self.start_variables_np[ii, j, t]
-    #                     )
-    #     return one_active_list
 
     def set_problem(self):
         logger.info("Setting LP problem...")
