@@ -96,7 +96,7 @@ def test_schedule_solver(test_input, expected):
     generator_parameters = [  # operators, timeslots, tasks
         *[[2, 5, 2]] * 10,
         *[[2, 10, 3]] * 10,
-        *[[10, 24, 10]] * 3,
+        *[[5, 24, 10]] * 3,
     ]
     for i, args in enumerate(generator_parameters):
         logger.info(f"Now at test {i + 1}/{len(generator_parameters)}...")
