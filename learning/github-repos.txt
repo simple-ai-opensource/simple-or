@@ -5,3 +5,4 @@
 5. Add branch protection rules (project -> settings -> add rule for master and development branch
    a. require code reviews (from code owners)
    b. dismiss stale PR's
+   c. status checks
