@@ -9,6 +9,7 @@ jobs:
   push-dev-code-to-test-pypi:
     name: Push development branch to test PyPI
     if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
     steps:
        - name: Check-out development branch
          uses: actions/checkout@v2
