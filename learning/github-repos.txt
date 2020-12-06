@@ -1,0 +1,7 @@
+1. Create the account of the organisation
+2. Create a repo for a project
+3. Push the PyPI cookiecutter to master as a placeholder.
+4. Create a development branch
+5. Add branch protection rules (project -> settings -> add rule for master and development branch
+   a. require code reviews (from code owners)
+   b. dismiss stale PR's
