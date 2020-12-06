@@ -1,12 +1,11 @@
-name: Simple OR continuous integration
+name: Tests on development branch
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ development ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
