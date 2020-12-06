@@ -176,10 +176,11 @@ class ScheduleSolver(Solver):
             for j in range(self.n_agents):
                 for t in range(current_latest_start + 1):
                     t_range = t + current_task_duration
-                    finish_if_started_constraint_list.append(
-                        lpSum(self.active_variables_np[i, j, t:t_range])
-                        >= self.start_variables_np[i, j, t] * current_task_duration
-                    )
+                    for t_running in range(t, t_range):
+                        finish_if_started_constraint_list.append(
+                            self.active_variables_np[i, j, t_running]
+                            >= self.start_variables_np[i, j, t]
+                        )
         return finish_if_started_constraint_list
 
     def _get_one_task_simultaneous_constraints(self) -> List:
