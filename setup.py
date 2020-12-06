@@ -12,11 +12,11 @@ with open("HISTORY.rst") as history_file:
 
 requirements = ["Click>=7.0", "numpy", "pulp", "pandas"]
 
-test_requirements = ["pytest>=3"]
+test_requirements = ["pytest>=3", "pytest-cov"]
 
 setup(
     author="Lennart Damen",
-    author_email="lennart.damen@hotmail.com",
+    author_email="lennart.damen.ai@gmail.com",
     python_requires=">=3.7",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
