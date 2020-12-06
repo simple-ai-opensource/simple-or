@@ -1,0 +1,29 @@
+name: Push code in dev branch to Test PyPI on merge
+
+on:
+  pull_request:
+    branches: [ development ]
+    types: [closed]
+
+jobs:
+  push-dev-code-to-test-pypi:
+    name: Push development branch to test PyPI
+    if: github.event.pull_request.merged == true
+    steps:
+       - name: Check-out development branch
+         uses: actions/checkout@v2
+         with:
+           ref: 'development'
+       - name: Setup Python
+         uses: actions/setup-python@v2
+         with:
+           python-version: '3.x'
+       - name: Update pip
+         run: python -m pip install --user --upgrade pip
+       - name: Create source and binary distribution
+         run: python setup.py sdist bdist_wheel
+       - name: Publish distribution to Test PyPI
+         uses: pypa/gh-action-pypi-publish@master
+         with:
+           password: ${{ secrets.test_pypi_password }}
+           repository_url: https://test.pypi.org/legacy/

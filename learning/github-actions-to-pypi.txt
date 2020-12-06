@@ -1,0 +1,9 @@
+See https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/.
+
+1. create account on Test PyPI and another one on 'normal' PyPI.
+   Preferably, these accounts have the same name.
+2. Download API tokens from PyPI. It will only appear in the browser and later no more.
+   Dont close the tab!
+3. Open a new tab, go to the main repo, click settings, secrets. Add the secrets
+   (e.g. pypi_password and test_pypi_password).
+4. github actions can access the secrets like so: ${{ secrets.pypi_password }}
