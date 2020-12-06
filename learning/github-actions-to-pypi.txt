@@ -6,3 +6,4 @@ See https://packaging.python.org/guides/publishing-package-distribution-releases
    Dont close the tab!
 3. Open a new tab, go to the main repo, click settings, secrets. Add the secrets
    (e.g. pypi_password and test_pypi_password).
+4. github actions can access the secrets like so: ${{ secrets.pypi_password }}
