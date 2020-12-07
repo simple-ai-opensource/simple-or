@@ -35,6 +35,10 @@ jobs:
            --wheel
            --outdir dist/
            .
+       - name: REMOVE THIS FOR SURE
+         env:
+            password: ${{ secrets.TEST_PYPI_PASSWORD }}
+         run: echo $password
        - name: Publish distribution to Test PyPI
          uses: pypa/gh-action-pypi-publish@master
          with:
