@@ -16,9 +16,9 @@ jobs:
          with:
            ref: 'development'
        - name: Setup Python
-         uses: actions/setup-python@v2
+         uses: actions/setup-python@v1
          with:
-           python-version: '3.x'
+           python-version: 3.7
        - name: Update pip
          run: python -m pip install --user --upgrade pip
        - name: Install pypa/build
@@ -35,13 +35,9 @@ jobs:
            --wheel
            --outdir dist/
            .
-       - name: REMOVE THIS FOR SURE
-         env:
-            password: ${{ secrets.TEST_PYPI_PASSWORD }}
-         run: echo $password
        - name: Publish distribution to Test PyPI
          uses: pypa/gh-action-pypi-publish@master
          with:
            user: __token__
-           password: ${{ secrets.TEST_PYPI_PASSWORD }}
+           password: ${{ secrets.test_pypi_password }}
            repository_url: https://test.pypi.org/legacy/
