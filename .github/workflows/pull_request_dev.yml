@@ -1,19 +1,21 @@
-name: Simple OR continuous integration
+name: Tests on development branch
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ development ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python: [3.7, 3.8]
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Check-out development branch
+        uses: actions/checkout@v2
+        with:
+          ref: 'development'
       - name: Setup Python
         uses: actions/setup-python@v2
         with:

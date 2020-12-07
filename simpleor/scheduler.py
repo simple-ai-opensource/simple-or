@@ -193,6 +193,8 @@ class ScheduleSolver(Solver):
         return one_task_simultaneous_list
 
     def set_problem(self):
+        """ Sets the Linear Programming problem of the object.
+        This functions sets the variables, constraints, and objective."""
         logger.info("Setting LP problem...")
         if not self.lp_variables_created:
             self._set_variables()
