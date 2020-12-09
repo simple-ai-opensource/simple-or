@@ -7,7 +7,7 @@ import simpleor.cli
 
 __author__ = """Lennart Damen"""
 __email__ = "lennart.damen@hotmail.com"
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 
 logging.basicConfig(
     stream=sys.stdout,
