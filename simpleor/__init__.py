@@ -9,6 +9,7 @@ __author__ = """Lennart Damen"""
 __email__ = "lennart.damen@hotmail.com"
 __version__ = "0.0.2"
 
+
 logging.basicConfig(
     stream=sys.stdout,
     format="%(asctime)s | %(levelname)-8s | Process: %(process)d | %(name)s:%("
