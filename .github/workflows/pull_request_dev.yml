@@ -14,8 +14,8 @@ jobs:
     steps:
       - name: Check-out development branch
         uses: actions/checkout@v2
-      - name: list files
-        run: ls -la
+        with:
+          ref: 'development'
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
