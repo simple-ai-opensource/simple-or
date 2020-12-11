@@ -14,8 +14,8 @@ jobs:
     steps:
       - name: Check-out development branch
         uses: actions/checkout@v2
-        with:
-          ref: 'development'
+      - name: list files
+        run: ls -la
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -25,5 +25,4 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run Tox
-        uses: actions/checkout@v2
-#        run: tox -e py
+        run: tox -e py
