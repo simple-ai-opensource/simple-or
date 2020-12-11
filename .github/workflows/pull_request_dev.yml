@@ -27,4 +27,3 @@ jobs:
       - name: Run Tox
         uses: actions/checkout@v2
 #        run: tox -e py
-        run: ls -la
