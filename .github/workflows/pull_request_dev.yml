@@ -25,6 +25,6 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run Tox
-        uses: actions/setup-python@v2
+        uses: actions/checkout@v2
           # Run tox using the version of Python in `PATH`
         run: tox -e py
