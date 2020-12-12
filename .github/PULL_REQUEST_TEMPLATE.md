@@ -9,7 +9,6 @@ ISSUE: ISSUE_ID_HERE
 - [ ] I have added type hints to all my changes.
 - [ ] my .pre-commit hook ran successfully, including black, flake8, check-yaml, end-of-file-fixer, and traling-whitespace
 
-
 ### PR Guidelines:
 - keep your PR's limited to a single issue and as small as possible (<300 lines of code).
 - for your commits, please follow https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716
