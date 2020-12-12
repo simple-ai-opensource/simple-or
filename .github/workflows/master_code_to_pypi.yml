@@ -6,7 +6,7 @@ on:
 
 jobs:
   push-master-code-to-pypi:
-    name: Push testing branch to test PyPI
+    name: Push master branch to PyPI
     runs-on: ubuntu-latest
     steps:
        - name: Check-out master branch
