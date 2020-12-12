@@ -56,7 +56,7 @@ task_id, agent_id, start_time, stop_time, task_duration
 
 .. code-block:: python
 
-    schedule_solver.solve()
+    schedule_solver.get_solution()
 
     [
         (0, 0, 0, 2, 2),
