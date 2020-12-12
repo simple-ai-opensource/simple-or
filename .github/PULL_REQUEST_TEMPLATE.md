@@ -9,11 +9,6 @@ ISSUE: ISSUE_ID_HERE
 - [ ] I have added type hints to all my changes.
 - [ ] my .pre-commit hook ran successfully, including black, flake8, check-yaml, end-of-file-fixer, and traling-whitespace
 
-### Version:
-- [ ] I incremented the package version by one compared to
-the current version in development according to the x.x.x style
-(major, minor, patch).
-
 
 ### PR Guidelines:
 - keep your PR's limited to a single issue and as small as possible (<300 lines of code).
