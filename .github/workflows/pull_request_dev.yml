@@ -12,10 +12,10 @@ jobs:
         python: [3.7, 3.8]
 
     steps:
-      - name: Check-out development branch
+      - name: Check-out head of pull request
         uses: actions/checkout@v2
         with:
-          ref: 'development'
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
