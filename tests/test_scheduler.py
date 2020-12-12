@@ -8,7 +8,11 @@ import logging
 from pandas.testing import assert_frame_equal
 import numpy as np
 from unittest.mock import patch
-from simpleor.scheduler import ScheduleSolver, ScheduleGenerator, read_schedule_problem
+from simpleor.scheduler import (
+    ScheduleSolver,
+    ScheduleProblemGenerator,
+    read_schedule_problem,
+)
 from simpleor.base import PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
@@ -46,7 +50,7 @@ test_solution = [  # task duration, available_schedule
 pytest_parameters = list(zip(test_input, test_solution))
 
 
-@patch("simpleor.scheduler.ScheduleSolver.vectorized_get_solution_value")
+@patch("simpleor.scheduler.ScheduleSolver._vectorized_get_solution_value")
 def test__set_solution(mock_vect_get_solution_value):
     task_durations = [7, 4, 3]
     available_timeslots = [
@@ -96,7 +100,7 @@ def test_schedule_solver(test_input, expected):
     generator_parameters = [*[[3, 5, 7]] * 10]  # operators, timeslots, tasks
     for i, args in enumerate(generator_parameters):
         logger.info(f"Now at test {i + 1}/{len(generator_parameters)}...")
-        generator = ScheduleGenerator(*args)
+        generator = ScheduleProblemGenerator(*args)
         generator.generate()
         solver = ScheduleSolver(
             task_durations=generator.task_durations,

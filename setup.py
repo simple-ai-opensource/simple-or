@@ -11,12 +11,19 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = ["Click>=7.0", "numpy", "pulp", "pandas"]
-
-test_requirements = ["pytest>=3"]
+test_requirements = ["pytest>=3", "pytest-cov"]
+development_requirements = [
+    "black",
+    "flake8",
+    "pre-commit",
+    "mypy",
+    "isort",
+    "bump2version",
+]
 
 setup(
     author="Lennart Damen",
-    author_email="lennart.damen@hotmail.com",
+    author_email="lennart.damen.ai@gmail.com",
     python_requires=">=3.7",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
@@ -29,14 +36,18 @@ setup(
     description="Package to solve Operations Research problems.",
     entry_points={"console_scripts": ["schedule=simpleor.cli:schedule"]},
     install_requires=requirements,
+    tests_require=test_requirements,
+    extras_require={
+        "test": test_requirements,
+        "dev": test_requirements + development_requirements,
+    },
     license="GNU General Public License v3",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
     keywords="simpleor",
     name="simpleor",
     packages=find_packages(include=["simpleor", "simpleor.*"]),
-    tests_require=test_requirements,
-    url="https://github.com/lennartdamen/simpleor",
-    version="0.0.0",
+    url="https://github.com/simple-ai-opensource/simple-or",
+    version="0.0.2",
     zip_safe=False,
 )
