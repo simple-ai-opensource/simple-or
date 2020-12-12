@@ -1,18 +1,18 @@
-name: Push code in dev branch to Test PyPI on merge
+name: Push code in test branch to Test PyPI on new commit
 
 on:
   push:
-    branches: [ development ]
+    branches: [ testing ]
 
 jobs:
   push-dev-code-to-test-pypi:
     name: Push development branch to test PyPI
     runs-on: ubuntu-latest
     steps:
-       - name: Check-out development branch
+       - name: Check-out testing branch
          uses: actions/checkout@v2
          with:
-           ref: 'development'
+           ref: 'testing'
        - name: Setup Python
          uses: actions/setup-python@v1
          with:
