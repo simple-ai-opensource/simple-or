@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
-from simpleor.base import Solver, Generator, PROJECT_DIRECTORY
+from simpleor.base import Solver, ProblemGenerator, PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 
@@ -18,6 +18,22 @@ WRITE_OPTIONS = ["csv", "excel"]
 
 @dataclass
 class ScheduleSolver(Solver):
+    """Class for solving scheduling problems
+
+    Args:
+        task_durations (list): integers with task durations
+        available_timeslots (list): list of list of integers where 1
+            indicates the agent is available and 0 not available.
+
+    Typically, you would want to solve the problem after initialization
+    and inspect the solution. E.g:
+        schedule_solver = ScheduleSolver(task_durations, available_timeslots)
+        schedule_solver.solve()
+        print(schedule_solver.get_solution_status())
+        print(schedule_solver.get_objective_value())
+        df_solution = schedule_solver.get_solution(kind="dataframe")
+    """
+
     task_durations: List[int]
     available_timeslots: List[List[int]]
 
@@ -193,6 +209,8 @@ class ScheduleSolver(Solver):
         return one_task_simultaneous_list
 
     def set_problem(self):
+        """Sets the Linear Programming problem of the object.
+        This functions sets the variables, constraints, and objective."""
         logger.info("Setting LP problem...")
         if not self.lp_variables_created:
             self._set_variables()
@@ -208,6 +226,7 @@ class ScheduleSolver(Solver):
         logger.info("Problem successfully set.")
 
     def solve(self):
+        """Solves the scheduling problem based on the object's attribute"""
         if not self.problem_is_set:
             logger.info("Problem was not set yet, setting now...")
             self.set_problem()
@@ -216,9 +235,11 @@ class ScheduleSolver(Solver):
         self._set_solution()
 
     def get_status(self) -> str:
+        """Returns the solution status after the problem has been tried to solve"""
         return LpStatus[self.pulp_problem.status]
 
     def get_objective_value(self) -> float:
+        """Returns the objective value of the optimal solution (if solution is found)"""
         return self.objective.value()
 
     @staticmethod
@@ -226,14 +247,14 @@ class ScheduleSolver(Solver):
         return pulp_variable.value()
 
     @property
-    def vectorized_get_solution_value(self):
+    def _vectorized_get_solution_value(self):
         return np.vectorize(self._get_one_pulp_variable_value)
 
     def _set_solution(self):
-        self.start_variables_solution = self.vectorized_get_solution_value(
+        self.start_variables_solution = self._vectorized_get_solution_value(
             self.start_variables_np
         ).astype(int)
-        self.active_variables_solution = self.vectorized_get_solution_value(
+        self.active_variables_solution = self._vectorized_get_solution_value(
             self.active_variables_np
         ).astype(int)
         task_started, on_agent, at_time = np.where(self.start_variables_solution)
@@ -254,6 +275,14 @@ class ScheduleSolver(Solver):
         )
 
     def get_solution(self, kind: Optional[str] = "native"):
+        """Get the solution of the scheduling problem
+
+        Args:
+            kind (str, optional): choose 'native' to return native python objects,
+                'dataframe' for a pandas solution.
+        Returns:
+            the solution as native python object or dataframe
+        """
         if (self.solution is None) or (self.solution_df is None):
             logger.info("solution is None. Trying to set the solution...")
             try:
@@ -271,6 +300,14 @@ class ScheduleSolver(Solver):
             raise ValueError(f"kind {kind} not recognized. Choose native/dataframe")
 
     def write_solution(self, directory: str, filename: str, how: str):
+        """Write solution of scheduling problem to disk
+
+        Args:
+            directory (str): directory where the solution should be saved
+            filename (str): filename of the solution
+            how (str): how the file should be saved
+                (choose 'csv' or 'excel')
+        """
         full_path = Path(directory).joinpath(Path(filename))
         logger.info(f"Writing solution to {full_path}")
         if how == "csv":
@@ -284,8 +321,8 @@ class ScheduleSolver(Solver):
 
 
 @dataclass
-class ScheduleGenerator(Generator):
-    """ Generates a scheduling problem.
+class ScheduleProblemGenerator(ProblemGenerator):
+    """ Class for generating scheduling problems.
 
     Args:
         n_agents (int): number of agents
@@ -321,6 +358,11 @@ class ScheduleGenerator(Generator):
             self.max_block_duration = self.n_timeslots
 
     def generate(self):
+        """ Generates a scheduling problem based on class attributes
+
+        The main attributes that are set with this method are
+        self.available_timeslots and self.task_durations
+        """
         self._generate_tasks()
         self._generate_available_timeslots()
 
@@ -381,6 +423,19 @@ class ScheduleGenerator(Generator):
 def read_schedule_problem(
     task_durations_file_path: str, available_schedule_file_path: str, how: str, **kwargs
 ) -> Tuple:
+    """ Reads scheduling problem data from csv files
+
+    Args:
+        task_durations_file_path (str): path to the task durations file
+        available_schedule_file_path (str): path to the file with information
+            about when agents are available (str)
+        how (str): method of how to read (choose csv/excel)
+
+    Returns:
+        task_durations (list): list with task durations
+        available_schedule (list): list with information about when an agent
+            is available
+    """
     logger.info(
         f"Reading data from {task_durations_file_path} and {available_schedule_file_path} with how={how}..."
     )
@@ -426,7 +481,7 @@ def validate_schedule_data(available_schedule: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    schedule_generator = ScheduleGenerator(
+    schedule_generator = ScheduleProblemGenerator(
         n_agents=5,
         n_timeslots=10,
         n_tasks=7,

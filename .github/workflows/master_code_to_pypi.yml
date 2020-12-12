@@ -1,0 +1,40 @@
+name: Push code in master branch to PyPI on new commit
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  push-master-code-to-pypi:
+    name: Push master branch to PyPI
+    runs-on: ubuntu-latest
+    steps:
+       - name: Check-out master branch
+         uses: actions/checkout@v2
+         with:
+           ref: 'master'
+       - name: Setup Python
+         uses: actions/setup-python@v1
+         with:
+           python-version: 3.7
+       - name: Update pip
+         run: python -m pip install --user --upgrade pip
+       - name: Install pypa/build
+         run: >-
+           python -m
+           pip install
+           build
+           --user
+       - name: Build a binary wheel and a source tarball
+         run: >-
+           python -m
+           build
+           --sdist
+           --wheel
+           --outdir dist/
+           .
+       - name: Publish distribution to PyPI
+         uses: pypa/gh-action-pypi-publish@master
+         with:
+           user: __token__
+           password: ${{ secrets.PYPI_TOKEN }}

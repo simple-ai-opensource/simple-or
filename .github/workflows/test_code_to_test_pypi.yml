@@ -1,0 +1,41 @@
+name: Push code in test branch to Test PyPI on new commit
+
+on:
+  push:
+    branches: [ testing ]
+
+jobs:
+  push-test-code-to-test-pypi:
+    name: Push testing branch to test PyPI
+    runs-on: ubuntu-latest
+    steps:
+       - name: Check-out testing branch
+         uses: actions/checkout@v2
+         with:
+           ref: 'testing'
+       - name: Setup Python
+         uses: actions/setup-python@v1
+         with:
+           python-version: 3.7
+       - name: Update pip
+         run: python -m pip install --user --upgrade pip
+       - name: Install pypa/build
+         run: >-
+           python -m
+           pip install
+           build
+           --user
+       - name: Build a binary wheel and a source tarball
+         run: >-
+           python -m
+           build
+           --sdist
+           --wheel
+           --outdir dist/
+           .
+       - name: Publish distribution to Test PyPI
+         uses: pypa/gh-action-pypi-publish@master
+         with:
+           user: __token__
+           password: ${{ secrets.TEST_PYPI_TOKEN }}
+           repository_url: https://test.pypi.org/legacy/
