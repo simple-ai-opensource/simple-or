@@ -1,18 +1,18 @@
-name: Push code in dev branch to Test PyPI on merge
+name: Push code in master branch to PyPI on new commit
 
 on:
   push:
-    branches: [ development ]
+    branches: [ master ]
 
 jobs:
-  push-dev-code-to-test-pypi:
-    name: Push development branch to test PyPI
+  push-master-code-to-pypi:
+    name: Push master branch to PyPI
     runs-on: ubuntu-latest
     steps:
-       - name: Check-out development branch
+       - name: Check-out master branch
          uses: actions/checkout@v2
          with:
-           ref: 'development'
+           ref: 'master'
        - name: Setup Python
          uses: actions/setup-python@v1
          with:
@@ -33,9 +33,8 @@ jobs:
            --wheel
            --outdir dist/
            .
-       - name: Publish distribution to Test PyPI
+       - name: Publish distribution to PyPI
          uses: pypa/gh-action-pypi-publish@master
          with:
            user: __token__
-           password: ${{ secrets.TEST_PYPI_TOKEN }}
-           repository_url: https://test.pypi.org/legacy/
+           password: ${{ secrets.PYPI_TOKEN }}
