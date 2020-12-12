@@ -20,7 +20,7 @@ Package to solve Operations Research problems.
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://simpleor.readthedocs.io.
+* Documentation: https://simple-or.readthedocs.io/
 
 Credits
 -------
