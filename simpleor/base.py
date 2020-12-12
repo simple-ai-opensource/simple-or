@@ -78,7 +78,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
 
-class Generator(metaclass=ABCMeta):
+class ProblemGenerator(metaclass=ABCMeta):
     @abstractmethod
     def generate(self):
         pass
