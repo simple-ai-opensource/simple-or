@@ -7,7 +7,7 @@ import simpleor.cli
 
 __author__ = """Lennart Damen"""
 __email__ = "lennart.damen@hotmail.com"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 
 logging.basicConfig(
