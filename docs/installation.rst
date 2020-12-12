@@ -6,8 +6,10 @@ Installation
 Stable release
 --------------
 
-TODO: Simple OR is not yet available from PyPI.
+You can install simpleor from PyPI with:
+.. code-block:: console
 
+    $ pip install simpleor
 
 From sources
 ------------
@@ -24,7 +26,7 @@ Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/lennartdamen/simpleor/tarball/master
+    $ curl -OJL https://github.com/simple-ai-opensource/simple-or
 
 Once you have a copy of the source, you can install it with:
 
@@ -33,5 +35,5 @@ Once you have a copy of the source, you can install it with:
     $ pip install .
 
 
-.. _Github repo: https://github.com/lennartdamen/simpleor
-.. _tarball: https://github.com/lennartdamen/simpleor/tarball/master
+.. _Github repo: https://github.com/simple-ai-opensource/simple-or
+.. _tarball: https://github.com/simple-ai-opensource/simple-or/tarball/master
