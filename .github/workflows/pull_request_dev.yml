@@ -1,4 +1,4 @@
-name: Tests on development branch
+name: Tests on PR's for development branch
 
 on:
   pull_request:
