@@ -8,7 +8,7 @@ simpleor
 
 
 .. image:: https://readthedocs.org/projects/simpleor/badge/?version=latest
-        :target: https://simpleor.readthedocs.io/en/latest/?badge=latest
+        :target: https://simple-or.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
