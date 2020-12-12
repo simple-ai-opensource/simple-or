@@ -7,6 +7,7 @@ Stable release
 --------------
 
 You can install simpleor from PyPI with:
+
 .. code-block:: console
 
     $ pip install simpleor
