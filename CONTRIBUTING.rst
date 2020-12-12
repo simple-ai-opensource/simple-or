@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/lennartdamen/simpleor/issues.
+Report bugs at https://github.com/simple-ai-opensource/simple-or/issues.
 
 If you are reporting a bug, please include:
 
@@ -70,7 +70,7 @@ Ready to contribute? Here's how to set up `simpleor` for local development.
     $ cd simpleor/
     $ pip install -r requirements.txt
     $ pip install -e .[dev]
-
+    $ pre-commit install
 
 4. Create a branch for local development::
 
@@ -80,11 +80,8 @@ Ready to contribute? Here's how to set up `simpleor` for local development.
 
 5. When you're done making changes, check that your changes pass the pre-commit hook and tests::
 
-    $ pre-commit install
-    $ pre-commit
     $ pytest
     $ tox
-
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -108,8 +105,12 @@ Before you submit a pull request, check that it meets these guidelines:
    pass for all supported Python versions.
 
 Your PR requires a review from one of the authors before it will be merged.
-After merge to development, a workflow is triggered that will upload to the testing
-branch and eventually to the master branch.
+Once your PR is approved, it is merged to the development branch.
+Later, an author can merge the development branch into testing (initiated by an author).
+At that moment a workflow is triggered that uploads the distribution to Test PyPI.
+After verifying the distribution works from Test PyPI, the authors merge
+the testing branch into the master branch and the distribution is sent
+to the official PyPI.
 
 Tips
 ----
@@ -129,6 +130,7 @@ you have set-up your terminal with the authentication for simple-ai-opensource,
 and simple-or as the origin::
 
     $ git checkout master
+    $ git pull origin master
     $ git fetch origin
     $ git branch -D testing
     $ git checkout -b testing
@@ -143,4 +145,5 @@ Then, check if everything works by installing from Test PyPI::
 
     $ pip install --extra-index-url https://testpypi.python.org/pypi simpleor
 
-If all is well, merge the testing branch into master and deploy to PyPI.
+If all is well, merge the testing branch into master with similar commands
+as above. This triggers a workflow that deploys the distribution to PyPI.
