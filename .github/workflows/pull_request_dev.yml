@@ -1,6 +1,5 @@
 name: Tests on PR's for development branch
 
-
 on:
   pull_request:
     branches: [ development ]
