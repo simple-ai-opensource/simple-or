@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
-from simpleor.base import Solver, ProblemGenerator
-from simpleor import PROJECT_DIRECTORY
+from simpleor.base import BaseSolver, BaseProblemGenerator
+from simpleor.utils import PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 
@@ -18,7 +18,7 @@ WRITE_OPTIONS = ["csv", "excel"]
 
 
 @dataclass
-class ScheduleSolver(Solver):
+class ScheduleSolver(BaseSolver):
     """Class for solving scheduling problems
 
     Args:
@@ -322,7 +322,7 @@ class ScheduleSolver(Solver):
 
 
 @dataclass
-class ScheduleProblemGenerator(ProblemGenerator):
+class ScheduleProblemGenerator(BaseProblemGenerator):
     """ Class for generating scheduling problems.
 
     Args:
@@ -357,6 +357,10 @@ class ScheduleProblemGenerator(ProblemGenerator):
             self.max_task_duration = self.n_timeslots
         if self.max_block_duration is None:
             self.max_block_duration = self.n_timeslots
+
+    def validate_input(self):
+        # TODO
+        pass
 
     def generate(self):
         """ Generates a scheduling problem based on class attributes

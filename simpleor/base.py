@@ -3,7 +3,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class Solver(metaclass=ABCMeta):
+class BaseSolver(metaclass=ABCMeta):
     @abstractmethod
     def validate_input(self):
         pass
@@ -41,7 +41,11 @@ class Solver(metaclass=ABCMeta):
         pass
 
 
-class ProblemGenerator(metaclass=ABCMeta):
+class BaseProblemGenerator(metaclass=ABCMeta):
+    @abstractmethod
+    def validate_input(self):
+        pass
+
     @abstractmethod
     def generate(self):
         pass
