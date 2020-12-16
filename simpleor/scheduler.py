@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
-from simpleor.base import Solver, ProblemGenerator, PROJECT_DIRECTORY
+from simpleor.base import Solver, ProblemGenerator
+from simpleor import PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 

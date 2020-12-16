@@ -3,7 +3,8 @@ import sys
 import click
 import logging
 
-from simpleor.base import _configure_logger, LOGGING_LEVELS, PROJECT_DIRECTORY
+from simpleor import PROJECT_DIRECTORY
+from simpleor.monitoring import _configure_logger, LOGGING_LEVELS
 from simpleor.scheduler import (
     READ_OPTIONS,
     WRITE_OPTIONS,
