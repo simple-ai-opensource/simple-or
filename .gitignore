@@ -107,5 +107,7 @@ ENV/
 
 # Data
 data/scheduler/*
+data/matchmaker/*
 !data/test
 !data/scheduler/.gitkeep
+!data/matchmaker/.gitkeep
