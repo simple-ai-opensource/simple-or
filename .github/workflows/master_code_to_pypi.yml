@@ -1,6 +1,6 @@
 name: Push code in master branch to PyPI on manual trigger
 
-on: [workflow-dispatch]
+on: [workflow_dispatch]
 
 jobs:
   push-master-code-to-pypi:
