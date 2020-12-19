@@ -1,4 +1,4 @@
-name: Push code in master branch to PyPI on new commit
+name: Push code in master branch to PyPI on manual trigger
 
 on:
   push:
