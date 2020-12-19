@@ -1,8 +1,8 @@
-name: Tests on PR's for development branch
+name: Run tests on PR's for master branch
 
 on:
   pull_request:
-    branches: [ development ]
+    branches: [ master ]
 
 jobs:
   build:

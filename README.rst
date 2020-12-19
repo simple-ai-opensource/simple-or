@@ -6,13 +6,10 @@ simpleor
 .. image:: https://img.shields.io/pypi/v/simpleor.svg
         :target: https://pypi.python.org/pypi/simpleor
 
-.. image:: https://img.shields.io/travis/lennartdamen/simpleor.svg
-        :target: https://travis-ci.com/lennartdamen/simpleor
 
 .. image:: https://readthedocs.org/projects/simpleor/badge/?version=latest
-        :target: https://simpleor.readthedocs.io/en/latest/?badge=latest
+        :target: https://simple-or.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
-
 
 
 
@@ -20,7 +17,7 @@ Package to solve Operations Research problems.
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://simpleor.readthedocs.io.
+* Documentation: https://simple-or.readthedocs.io/
 
 Credits
 -------

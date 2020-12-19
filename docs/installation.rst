@@ -21,7 +21,7 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/lennartdamen/simpleor
+    $ git clone git://github.com/simple-ai-opensource/simpleor
 
 Or download the `tarball`_:
 

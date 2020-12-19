@@ -1,18 +1,18 @@
-name: Push code in test branch to Test PyPI on new commit
+name: Push code in master branch to Test PyPI on new commit
 
 on:
   push:
-    branches: [ testing ]
+    branches: [ master ]
 
 jobs:
   push-test-code-to-test-pypi:
-    name: Push testing branch to test PyPI
+    name: Push master branch to test PyPI
     runs-on: ubuntu-latest
     steps:
-       - name: Check-out testing branch
+       - name: Check-out master branch
          uses: actions/checkout@v2
          with:
-           ref: 'testing'
+           ref: 'master'
        - name: Setup Python
          uses: actions/setup-python@v1
          with:

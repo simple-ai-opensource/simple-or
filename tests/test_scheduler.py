@@ -13,7 +13,7 @@ from simpleor.scheduler import (
     ScheduleProblemGenerator,
     read_schedule_problem,
 )
-from simpleor.base import PROJECT_DIRECTORY
+from simpleor.utils import PROJECT_DIRECTORY
 
 logger = logging.getLogger(f"{__name__}")
 

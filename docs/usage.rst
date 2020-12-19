@@ -7,8 +7,10 @@ Scheduler
 Currently, simpleor only has a scheduler, but this will be
 extended in the future.
 
-With the scheduler you can optimize the assignment of task to agents.
+With the scheduler you can optimize the assignment of tasks to agents.
 All tasks have an integer duration, and all agents have an available schedule.
+The scheduler tries to assign as many jobs to agents as possible while respecting
+the schedule of the agents.
 
 For example, suppose we have two tasks with a duration of 2 and 3.
 
@@ -56,7 +58,7 @@ task_id, agent_id, start_time, stop_time, task_duration
 
 .. code-block:: python
 
-    schedule_solver.solve()
+    schedule_solver.get_solution()
 
     [
         (0, 0, 0, 2, 2),
