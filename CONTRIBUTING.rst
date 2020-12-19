@@ -83,13 +83,18 @@ Ready to contribute? Here's how to set up `simpleor` for local development.
     $ pytest
     $ tox
 
-6. Commit your changes and push your branch to GitHub::
+6. Now update the version with bump2version. In general you want to add the 'patch' tag,
+because you should send small PR's. You can choose from 'patch', 'minor', and 'major'::
+
+    $ bump2version patch
+
+7. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request TO THE DEVELOPMENT BRANCH through the GitHub website.
+8. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
@@ -101,8 +106,9 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 3.7 and 3.8. Check the Github Actions
-   tab of the main simpleo-or repo and make sure that the tests of the development branch
+   tab of the main simple-or repo and make sure that the tests of the development branch
    pass for all supported Python versions.
+4. You should increase the version number
 
 Your PR requires a review from one of the authors before it will be merged.
 Once your PR is approved, it is merged to the development branch.
@@ -125,25 +131,9 @@ Deploying
 
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run merge the development branch into testing. Code below assumes
-you have set-up your terminal with the authentication for simple-ai-opensource,
-and simple-or as the origin::
-
-    $ git checkout master
-    $ git pull origin master
-    $ git fetch origin
-    $ git branch -D testing
-    $ git checkout -b testing
-    $ git pull development
-    $ bump2version patch # possible: major / minor / patch
-    $ git push origin testing
-    $ git push origin testing --tags
-
-Github will then deploy to test PyPI if tests pass.
-
-Then, check if everything works by installing from Test PyPI::
+The code has already been push to Test PyPI, so check that the installation does not
+raise any errors::
 
     $ pip install --extra-index-url https://testpypi.python.org/pypi simpleor
 
-If all is well, merge the testing branch into master with similar commands
-as above. This triggers a workflow that deploys the distribution to PyPI.
+If all is well, go to the 'Actions' tab and manually run the worfklow 'master_code_to_pypi.yml'.

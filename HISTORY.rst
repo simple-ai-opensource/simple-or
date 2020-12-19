@@ -6,3 +6,10 @@ History
 ------------------
 
 * First release on PyPI.
+
+0.0.5 (2020-12-19)
+------------------
+
+* Added match maker module
+* Updated docs
+* Simplified GitHub workflow
