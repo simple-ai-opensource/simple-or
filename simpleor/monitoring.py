@@ -35,8 +35,3 @@ def _configure_logger(verbose: str):
         "funcName)s:%(lineno)d - %(message)s",
         level=level,
     )
-
-
-def get_logger(name: str, verbose: str):
-    _configure_logger(verbose=verbose)
-    return logging.getLogger(f"{name}")
