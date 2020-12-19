@@ -1,4 +1,5 @@
 import pytest
+from typing import List
 import numpy as np
 from simpleor.matchmaker import MatchMaker
 
@@ -15,6 +16,23 @@ def fake_match_maker() -> MatchMaker:
         ]
     )
     return MatchMaker(match_matrix=match_matrix)
+
+
+def validate_solution_feasibility(solution: List[List]):
+    solution_np = np.array(solution)
+    m, n = solution_np.shape
+
+    assert m == n, "solution is not square"
+
+    assert (
+        solution_np.sum(axis=1) <= 1
+    ).all(), "solution assigns one person to two other people"
+    assert (
+        solution_np.sum(axis=0) <= 1
+    ).all(), "solution assigns one person to two other people"
+    for i in range(n):
+        for j in range(i + 1, n):
+            assert solution_np[i, j] == solution_np[i, j], "solution is not symmetric"
 
 
 def test__create_symmetry_constraints(fake_match_maker):
@@ -50,3 +68,12 @@ def test__get_single_assignment_constraints(fake_match_maker):
                 f"len(constraints_single_{i}) should be {fake_match_maker.n}, "
                 f"actually is {len(constraints_single)}"
             )
+
+
+def test_solve(fake_match_maker):
+    fake_match_maker.set_problem()
+    for solve_kind in ["heuristic", "pulp"]:
+        fake_match_maker.solve(kind=solve_kind)
+        validate_solution_feasibility(
+            solution=fake_match_maker.get_solution(kind=solve_kind, verbose=False)
+        )

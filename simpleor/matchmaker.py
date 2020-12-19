@@ -34,7 +34,7 @@ class MatchMaker(BaseSolver):
     match_matrix: np.array
 
     def __post_init__(self):
-        self.validate_input(match_matrix=self.match_matrix)
+        self.validate_input()
         self.n = self.match_matrix.shape[0]
         self._set_variables()
         self.constraints_all = []
@@ -46,20 +46,20 @@ class MatchMaker(BaseSolver):
         self.x = [LpVariable(name=x_name, cat="Binary") for x_name in self.x_names]
         self.x_np = np.array(self.x).reshape((self.n, self.n))
 
-    def validate_input(match_matrix: np.array):
+    def validate_input(self):
         # type check
-        if not isinstance(match_matrix, np.ndarray):
+        if not isinstance(self.match_matrix, np.ndarray):
             raise ValueError("match_matrix is not a numpy array")
         # shape check
-        m, n = match_matrix.shape
+        m, n = self.match_matrix.shape
         if m != n:
             raise ValueError(
                 f"match_matrix is not square: love_matrix.shape"
-                f"= {match_matrix.shape}"
+                f"= {self.match_matrix.shape}"
             )
         # diagonal zero check
         for i in range(n):
-            if match_matrix[i, i] != 0:
+            if self.match_matrix[i, i] != 0:
                 raise ValueError("match_matrix diagonal contains nonzeros")
 
     # Symmetry constraints: if one is paired, the other is paired
