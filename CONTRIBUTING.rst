@@ -111,12 +111,9 @@ Before you submit a pull request, check that it meets these guidelines:
 4. You should increase the version number
 
 Your PR requires a review from one of the authors before it will be merged.
-Once your PR is approved, it is merged to the development branch.
-Later, an author can merge the development branch into testing (initiated by an author).
-At that moment a workflow is triggered that uploads the distribution to Test PyPI.
-After verifying the distribution works from Test PyPI, the authors merge
-the testing branch into the master branch and the distribution is sent
-to the official PyPI.
+Once your PR is approved, it is merged to master branch and push automatically to
+Test PyPI. An author will verify the Test PyPI installation and manually trigger
+a workflow that sends the new changes to the official PyPI.
 
 Tips
 ----
