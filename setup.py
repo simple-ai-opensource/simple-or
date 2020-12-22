@@ -48,6 +48,6 @@ setup(
     name="simpleor",
     packages=find_packages(include=["simpleor", "simpleor.*"]),
     url="https://github.com/simple-ai-opensource/simple-or",
-    version="0.0.5",
+    version="0.0.6",
     zip_safe=False,
 )

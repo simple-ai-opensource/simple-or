@@ -1,12 +1,12 @@
 # scheduler.py
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import logging
-from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus
+from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus, lpDot
 from simpleor.base import BaseSolver, BaseProblemGenerator
 from simpleor.utils import PROJECT_DIRECTORY
 
@@ -25,6 +25,7 @@ class ScheduleSolver(BaseSolver):
         task_durations (list): integers with task durations
         available_timeslots (list): list of list of integers where 1
             indicates the agent is available and 0 not available.
+        task_rewards (list): floats of reward received for completing task
 
     Typically, you would want to solve the problem after initialization
     and inspect the solution. E.g:
@@ -37,9 +38,12 @@ class ScheduleSolver(BaseSolver):
 
     task_durations: List[int]
     available_timeslots: List[List[int]]
+    task_rewards: Optional[List[Union[int, float]]] = None
 
     def __post_init__(self):
-        self.validate_input(self.task_durations, self.available_timeslots)
+        self.validate_input(
+            self.task_durations, self.available_timeslots, self.task_rewards
+        )
         self.n_tasks = len(self.task_durations)
         self.n_agents = len(self.available_timeslots)
         self.n_timeslots = len(self.available_timeslots[0])
@@ -57,16 +61,26 @@ class ScheduleSolver(BaseSolver):
         self.solution_df = None
 
     @classmethod
-    def validate_input(cls, task_durations, available_schedule):
+    def validate_input(cls, task_durations, available_schedule, task_rewards):
         cls.validate_task_durations(task_durations)
         cls.validate_available_schedule(available_schedule)
+        cls.validate_task_rewards(task_rewards)
+        cls.validate_task_durations_and_rewards_compatible(
+            task_durations=task_durations, task_rewards=task_rewards
+        )
 
-    @staticmethod
-    def validate_task_durations(task_durations):
+    @classmethod
+    def validate_task_durations(cls, task_durations):
         if not isinstance(task_durations, list):
             raise ValueError("task_durations must be list")
         if not all([isinstance(x, int) for x in task_durations]):
             raise ValueError("task_durations elements must be int")
+        cls._check_if_elements_positive(task_durations)
+
+    @staticmethod
+    def _check_if_elements_positive(array):
+        if not all([x > 0 for x in array]):
+            raise ValueError("element in array is negative")
 
     @staticmethod
     def validate_available_schedule(available_schedule):
@@ -87,6 +101,23 @@ class ScheduleSolver(BaseSolver):
                     raise ValueError(
                         "available_schedule second order elements must be int 0/1"
                     )
+
+    @classmethod
+    def validate_task_rewards(cls, task_rewards):
+        if task_rewards is None:
+            return
+        if not isinstance(task_rewards, list):
+            raise ValueError("task_rewards must be list")
+        if not all([isinstance(x, int) or isinstance(x, float) for x in task_rewards]):
+            raise ValueError("task_rewards elements must be float")
+        cls._check_if_elements_positive(task_rewards)
+
+    @staticmethod
+    def validate_task_durations_and_rewards_compatible(task_durations, task_rewards):
+        if task_rewards is None:
+            return
+        if len(task_durations) != len(task_rewards):
+            raise ValueError("task_durations and task_rewards not the same length")
 
     def _set_variables(self):
         logger.info("Setting variables...")
@@ -118,8 +149,12 @@ class ScheduleSolver(BaseSolver):
         self.lp_variables_created = True
 
     def _set_objective(self):
-        logger.info("Setting objective...")
-        self.objective = lpSum(self.start_variables_np)
+        if self.task_rewards is None:
+            logger.info("Setting objective with equal reward for every task...")
+            self.objective = lpSum(self.start_variables_np)
+        else:
+            logger.info("Setting objective with task rewards...")
+            self.objective = lpDot(self.start_variables_np, self.task_rewards)
 
     def _set_constraints(self):
         logger.info("Setting constraints...")
@@ -349,6 +384,10 @@ class ScheduleProblemGenerator(BaseProblemGenerator):
     max_block_duration: Optional[int] = None
 
     def __post_init__(self):
+        self.task_durations = []
+        self.available_timeslots = [[]]
+        self.task_rewards = None
+
         self.max_n_blocks = (
             int(self.n_timeslots / self.min_block_duration) + 1
         ) * self.n_agents
@@ -362,14 +401,29 @@ class ScheduleProblemGenerator(BaseProblemGenerator):
         # TODO
         pass
 
-    def generate(self):
+    def generate(
+        self,
+        generate_rewards: Optional[bool] = False,
+        min_reward: Optional[int] = None,
+        max_reward: Optional[int] = None,
+    ):
         """ Generates a scheduling problem based on class attributes
 
         The main attributes that are set with this method are
-        self.available_timeslots and self.task_durations
+        self.available_timeslots, self.task_durations and optionally
+        self.task_rewards if generate_rewards = True.
+
+        Args:
+            generate_rewards (bool): if the rewards should be
+                generated or not
+            min_reward (int, optional): minimum reward value
+            max_reward (int, optional): maximum reward value
         """
         self._generate_tasks()
         self._generate_available_timeslots()
+        if generate_rewards:
+            self._validate_reward_input(min_reward=min_reward, max_reward=max_reward)
+            self._generate_rewards(min_reward=min_reward, max_reward=max_reward)
 
     def _generate_tasks(self):
         allowed_durations = list(
@@ -377,6 +431,20 @@ class ScheduleProblemGenerator(BaseProblemGenerator):
         )
         self.task_durations = np.random.choice(
             a=allowed_durations, size=self.n_tasks
+        ).tolist()
+
+    @staticmethod
+    def _validate_reward_input(min_reward, max_reward):
+        for x in (min_reward, max_reward):
+            if not isinstance(x, int):
+                raise ValueError("rewards must be int")
+            if x <= 0:
+                raise ValueError("rewards must be positive")
+
+    def _generate_rewards(self, min_reward, max_reward):
+        allowed_rewards = list(range(min_reward, max_reward + 1))
+        self.task_rewards = np.random.choice(
+            a=allowed_rewards, size=self.n_tasks
         ).tolist()
 
     def _generate_available_timeslots(self):
@@ -495,7 +563,7 @@ if __name__ == "__main__":
         min_block_duration=2,
         max_block_duration=4,
     )
-    schedule_generator.generate()
+    schedule_generator.generate(generate_rewards=True, min_reward=1, max_reward=10)
 
     logger.info("==============================================")
     logger.info("PROBLEM")
@@ -507,6 +575,7 @@ if __name__ == "__main__":
     schedule_solver = ScheduleSolver(
         task_durations=schedule_generator.task_durations,
         available_timeslots=schedule_generator.available_timeslots,
+        task_rewards=schedule_generator.task_rewards,
     )
     schedule_solver.set_problem()
     schedule_solver.solve()

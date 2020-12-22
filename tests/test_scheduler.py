@@ -118,6 +118,23 @@ def test_schedule_solver(test_input, expected):
         assert (schedule_okay <= 0).all()
 
 
+def test_schedule_solver_with_reward():
+    task_durations = [4, 2, 2, 2]
+    available_timeslots = [[1, 1, 1, 1]]
+    task_rewards = [100, 1, 2, 1]
+    schedule_solver = ScheduleSolver(
+        task_durations=task_durations,
+        available_timeslots=available_timeslots,
+        task_rewards=task_rewards,
+    )
+    schedule_solver.solve()
+    df_solution = schedule_solver.get_solution(kind="dataframe")
+    expected = pd.DataFrame(
+        {"task": [0], "agent": [0], "start": [0], "stop": [4], "task_duration": [4]}
+    )
+    assert_frame_equal(df_solution, expected)
+
+
 def test_read_schedule_problem():
     # csv
     task_durations, available_schedule = read_schedule_problem(
@@ -132,3 +149,17 @@ def test_read_schedule_problem():
 
     assert task_durations == [3, 2]
     assert available_schedule == [[1, 1, 0, 0, 0], [0, 0, 1, 1, 1]]
+
+
+def test__generate_rewards():
+    test_inputs = ((1, 1, 1), (10, 1, 1))
+    expected = ([1], [1] * 10)
+    for i, (n_tasks, min_reward, max_reward) in enumerate(test_inputs):
+        generator = ScheduleProblemGenerator(
+            n_agents=1, n_timeslots=1, n_tasks=n_tasks  # irrelevant  # irrelevant
+        )
+        generator._generate_rewards(min_reward=min_reward, max_reward=max_reward)
+        assert generator.task_rewards == expected[i]
+    for _ in range(20):
+        generator._generate_rewards(min_reward=1, max_reward=3)
+        assert all([1 <= x <= 3 for x in generator.task_rewards])
