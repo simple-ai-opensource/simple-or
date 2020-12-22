@@ -1,6 +1,1 @@
-========
-simpleor
-========
-
-
 .. include:: ../README.rst
