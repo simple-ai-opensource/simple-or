@@ -24,6 +24,3 @@ your own Operations Research solvers.
 
 * Documentation: https://simple-or.readthedocs.io/
 * Free software: GNU General Public License v3
-
-
-.. include:: AUTHORS.rst
