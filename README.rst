@@ -13,11 +13,11 @@ simpleor
 
 
 
-Package to solve Operations Research problems.
+Welcome to simpleor! This is a python package to solve Operations Research problems.
+Check out the official documentation in the link below.
 
-
-* Free software: GNU General Public License v3
 * Documentation: https://simple-or.readthedocs.io/
+* Free software: GNU General Public License v3
 
 Credits
 -------
