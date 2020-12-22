@@ -78,6 +78,10 @@ Ready to contribute? Here's how to set up `simpleor` for local development.
 
    Now you can make your changes locally.
 
+If you are starting on a new problem, make sure that your Generator or Solver
+inherits from the base Generator or Solver. As an example, see the implementation
+of ScheduleSolver.
+
 5. When you're done making changes, check that your changes pass the pre-commit hook and tests::
 
     $ pytest
@@ -108,7 +112,7 @@ Before you submit a pull request, check that it meets these guidelines:
 3. The pull request should work for Python 3.7 and 3.8. Check the Github Actions
    tab of the main simple-or repo and make sure that the tests of the development branch
    pass for all supported Python versions.
-4. You should increase the version number
+4. Did you increase the version number?
 
 Your PR requires a review from one of the authors before it will be merged.
 Once your PR is approved, it is merged to master branch and push automatically to
