@@ -13,7 +13,10 @@ simpleor
 
 
 
-``simpleor`` is a package that helps you solve Operations Research problems.
+``simpleor`` is a package that shows how Operations Research problems
+can be solved with Python. This project primarily serves as a learning
+experiment, although the package's functionality can be used in real-life.
+
 Currently, ``simpleor`` supports:
 
 - a scheduler, which assigns tasks to agents
