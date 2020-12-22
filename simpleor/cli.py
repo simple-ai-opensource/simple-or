@@ -81,7 +81,7 @@ def schedule(
     write: str,
     verbose: str,
 ):
-    """Console script for clients."""
+    """Command Line Interface for scheduler"""
     _configure_logger(verbose=verbose)
     logger.info("Running scheduler...")
     task_durations, available_timeslots = read_schedule_problem(
