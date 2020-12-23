@@ -7,6 +7,6 @@ from simpleor.monitoring import _configure_logger
 
 __author__ = """Lennart Damen"""
 __email__ = "lennart.damen.ai@gmail.com"
-__version__ = "0.0.8"
+__version__ = "0.0.9"
 
 _configure_logger(verbose="info")
