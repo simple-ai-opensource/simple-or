@@ -19,6 +19,8 @@ development_requirements = [
     "mypy",
     "isort",
     "bump2version",
+    "sphinx",
+    "spinx-panels",
 ]
 
 setup(
