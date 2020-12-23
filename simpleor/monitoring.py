@@ -22,6 +22,10 @@ def _configure_logger(verbose: str):
         level = logging.DEBUG
     elif verbose == "info":
         level = logging.INFO
+    elif verbose == "warning":
+        level = logging.INFO
+    elif verbose == "error":
+        level = logging.ERROR
     elif verbose == "critical":
         level = logging.CRITICAL
     else:
