@@ -9,6 +9,7 @@ from pulp import (
     LpMaximize,
     LpStatus,
     value,
+    lpDot,
 )
 import numpy as np
 import itertools
@@ -27,8 +28,8 @@ class MatchMaker(BaseSolver):
     """Class to solve matchmaker problems
 
     Args:
-        match_matrix (np.array): square binary matrix indicating which
-            nodes can be matched. Diagonal must be zero.
+        match_matrix (np.array): square integer matrix indicating the reward
+            of assigning two nodes
     """
 
     match_matrix: np.array
@@ -166,7 +167,7 @@ class MatchMaker(BaseSolver):
         ]
 
     def _set_objective(self):
-        self.objective = LpAffineExpression([(x_i, 1) for x_i in self.x])
+        self.objective = lpDot(self.x, self.match_matrix)
 
     def set_problem(self):
         # Initialize constraints and objective

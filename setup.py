@@ -19,6 +19,8 @@ development_requirements = [
     "mypy",
     "isort",
     "bump2version",
+    "sphinx",
+    "spinx-panels",
 ]
 
 setup(
@@ -48,6 +50,6 @@ setup(
     name="simpleor",
     packages=find_packages(include=["simpleor", "simpleor.*"]),
     url="https://github.com/simple-ai-opensource/simple-or",
-    version="0.0.7",
+    version="0.0.8",
     zip_safe=False,
 )

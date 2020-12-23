@@ -8,12 +8,12 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-LOGGING_LEVELS = ["debug", "info", "critical"]
+LOGGING_LEVELS = ["debug", "info", "warning", "error", "critical"]
 
 
 def _configure_logger(verbose: str):
     """
-    Define logs formats.
+    Define logs level and formats.
 
     Args:
         verbose: logging level
@@ -22,6 +22,10 @@ def _configure_logger(verbose: str):
         level = logging.DEBUG
     elif verbose == "info":
         level = logging.INFO
+    elif verbose == "warning":
+        level = logging.INFO
+    elif verbose == "error":
+        level = logging.ERROR
     elif verbose == "critical":
         level = logging.CRITICAL
     else:
