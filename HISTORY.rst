@@ -14,7 +14,7 @@ History
 * Updated docs
 * Simplified GitHub workflow
 
-0.0.8 (2020-12-23)
+0.0.9 (2020-12-23)
 ------------------
 
 * added task reward option to scheduler
