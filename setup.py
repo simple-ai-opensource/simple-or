@@ -19,9 +19,8 @@ development_requirements = [
     "mypy",
     "isort",
     "bump2version",
-    "sphinx",
-    "spinx-panels",
 ]
+documentation_requirements = ["sphinx", "sphinx-panels"]
 
 setup(
     author="Lennart Damen",
@@ -42,6 +41,7 @@ setup(
     extras_require={
         "test": test_requirements,
         "dev": test_requirements + development_requirements,
+        "docs": documentation_requirements,
     },
     license="GNU General Public License v3",
     long_description=readme + "\n\n" + history,
