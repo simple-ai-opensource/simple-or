@@ -15,6 +15,13 @@ For example, suppose we have two tasks with a duration of 2 and 3.
 
     task_durations = [2, 3]
 
+For now, let's assume that for both tasks we get a reward of 5 if
+we execute it:
+
+.. code-block:: python
+
+    task_rewards = [5, 5]
+
 We also have two agents, which operate in the time interval [1, 2, ..., 5].
 Agent 1 is available during the first two timeslots, agent 2 during the last three.
 
@@ -45,6 +52,7 @@ You can import the schedule solver as follows:
     schedule_solver = ScheduleSolver(
         task_durations=task_durations,
         available_timeslots=available_timeslots,
+        task_rewards=task_rewards
     )
 
 
@@ -76,13 +84,38 @@ Command line
 ~~~~~~~~~~~~
 In case you do not want to program in Python, you can use the command line.
 
+.. code-block::
+
+    $ scheduler --help``
+
+    Usage: schedule [OPTIONS]
+
+      Command Line Interface for scheduler
+
+    Options:
+      --durationsfile TEXT  Path to task_durations file
+      --schedulefile TEXT   Path to available_schedule file
+      --rewardsfile TEXT    Path to task rewards file (optional, default equal reward)
+      --read TEXT           What kind of file to read (['csv', 'excel'])
+      --solutiondir TEXT    Directory where the solution is written to
+      --solutionfile TEXT   Filename of the solution
+      --write TEXT          What kind of file to read (['csv', 'excel'])
+      -v, --verbose TEXT    Verbosity level ['debug', 'info', 'warning', 'error',
+                            'critical']
+      --help                Show this message and exit.
+
+
 First, you need to create two files.
 
 - task_durations.csv, which should be a list of the task durations (in one column). The task durations should be integer.
 - available_schedule.csv, where every row corresponds to an agent. A row corresponds to an agent, a column to a period.
   A 1 indicates the agent is available in that timeslot, a 0 means not available.
 
-You can store these files anywhere you like. Store the paths to these files
+Optionally, you can have a task_rewards.csv file specifying the value
+of executing a certain task. If you do not specify this file, the solver
+will assume an equal reward for every task.
+
+You can store these files anywhere you like. Save the paths to these files
 somewhere.
 
 Next, open a terminal and type the following command (replace <TASK_DURATION_PATH>
@@ -96,7 +129,7 @@ By default, the solution will be stored in the data directory of the package. If
 to store it somewhere else, add the following flag: ``--solutiondir <SOLUTION_DIRECTORY_PATH>``
 
 By default, the name of the solution file is ``solution_cli.csv``. In case you want to
-change it, add the flag `--solutionfile solution_cli`
+change it, add the flag ``--solutionfile solution_cli``
 
 Instead of csv, you can also use excel files. In that case, add the following
 flag: ``--read excel`` or ``--write excel``
