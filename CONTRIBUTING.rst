@@ -124,7 +124,7 @@ Tips
 
 To run a subset of tests::
 
-$ pytest tests.test_simpleor
+$ pytest tests.test_scheduler.py
 
 
 Deploying

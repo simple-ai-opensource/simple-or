@@ -131,6 +131,7 @@ to store it somewhere else, add the following flag: ``--solutiondir <SOLUTION_DI
 By default, the name of the solution file is ``solution_cli.csv``. In case you want to
 change it, add the flag ``--solutionfile solution_cli``
 
+
 Instead of csv, you can also use excel files. In that case, add the following
 flag: ``--read excel`` or ``--write excel``
 
