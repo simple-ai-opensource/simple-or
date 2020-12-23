@@ -19,11 +19,11 @@
 #
 import os
 import sys
-import simpleor
 
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, "../simpleor")
 
+import simpleor
 
 # -- General configuration ---------------------------------------------
 
