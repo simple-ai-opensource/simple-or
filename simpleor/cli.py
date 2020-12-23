@@ -6,7 +6,7 @@ import logging
 from simpleor.utils import PROJECT_DIRECTORY
 from simpleor.monitoring import _configure_logger, LOGGING_LEVELS
 from simpleor.scheduler import (
-    READ_OPTIONS,
+    READ_FUNCTION_DICT,
     WRITE_OPTIONS,
     read_schedule_problem,
     ScheduleSolver,
@@ -35,11 +35,15 @@ available_schedule_path_option = click.option(
     help="Path to available_schedule file",
 )
 
+task_rewards_path_option = click.option(
+    "--rewardsfile", type=str, default=None, help="Path to task rewards file"
+)
+
 read_kind_option = click.option(
     "--read",
     type=str,
     default="csv",
-    help=f"What kind of file to read ({READ_OPTIONS})",
+    help=f"What kind of file to read ({READ_FUNCTION_DICT.keys()})",
 )
 
 solution_directory_option = click.option(
@@ -67,6 +71,7 @@ solution_write_kind_option = click.option(
 @click.command()
 @task_durations_path_option
 @available_schedule_path_option
+@task_rewards_path_option
 @read_kind_option
 @solution_directory_option
 @solution_filename_option
@@ -75,6 +80,7 @@ solution_write_kind_option = click.option(
 def schedule(
     durationsfile: str,
     schedulefile: str,
+    rewardsfile: str,
     read: str,
     solutiondir: str,
     solutionfile: str,
@@ -84,13 +90,16 @@ def schedule(
     """Command Line Interface for scheduler"""
     _configure_logger(verbose=verbose)
     logger.info("Running scheduler...")
-    task_durations, available_timeslots = read_schedule_problem(
+    task_durations, available_timeslots, task_rewards = read_schedule_problem(
         task_durations_file_path=durationsfile,
         available_schedule_file_path=schedulefile,
+        task_rewards_file_path=rewardsfile,
         how=read,
     )
     solver = ScheduleSolver(
-        task_durations=task_durations, available_timeslots=available_timeslots
+        task_durations=task_durations,
+        available_timeslots=available_timeslots,
+        task_rewards=task_rewards,
     )
     solver.solve()
     solver.write_solution(directory=solutiondir, filename=solutionfile, how=write)

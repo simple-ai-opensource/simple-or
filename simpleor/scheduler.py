@@ -13,8 +13,9 @@ from simpleor.utils import PROJECT_DIRECTORY
 logger = logging.getLogger(f"{__name__}")
 
 PROBLEM_NAME = "The_Schedule_Problem"
-READ_OPTIONS = ["csv", "excel"]
+# READ_OPTIONS = ["csv", "excel"]
 WRITE_OPTIONS = ["csv", "excel"]
+READ_FUNCTION_DICT = {"csv": pd.read_csv, "excel": pd.read_excel}
 
 
 @dataclass
@@ -494,7 +495,11 @@ class ScheduleProblemGenerator(BaseProblemGenerator):
 
 
 def read_schedule_problem(
-    task_durations_file_path: str, available_schedule_file_path: str, how: str, **kwargs
+    task_durations_file_path: str,
+    available_schedule_file_path: str,
+    how: str,
+    task_rewards_file_path: Optional[str] = None,
+    **kwargs,
 ) -> Tuple:
     """ Reads scheduling problem data from csv files
 
@@ -502,49 +507,52 @@ def read_schedule_problem(
         task_durations_file_path (str): path to the task durations file
         available_schedule_file_path (str): path to the file with information
             about when agents are available (str)
+        rewardsfile (str): path to the task rewards file
         how (str): method of how to read (choose csv/excel)
 
     Returns:
         task_durations (list): list with task durations
         available_schedule (list): list with information about when an agent
             is available
+        task_rewards (list): list with task rewards. all 1 if reward file not
+            specified
     """
     logger.info(
         f"Reading data from {task_durations_file_path} and {available_schedule_file_path} with how={how}..."
     )
-    if how == "csv":
-        task_durations_df = pd.read_csv(
-            task_durations_file_path, header=None, dtype=int, **kwargs
-        )
-        available_schedule_df = pd.read_csv(
-            available_schedule_file_path, header=None, dtype=bool, **kwargs
-        )
-    elif how == "excel":
-        task_durations_df = pd.read_excel(task_durations_file_path, dtype=int, **kwargs)
-        available_schedule_df = pd.read_excel(
-            available_schedule_file_path, dtype=bool, **kwargs
-        )
-    else:
+    if how not in READ_FUNCTION_DICT.keys():
         raise ValueError(
-            f"how = {how} not in READ_OPTIONS. " f"Choose from {READ_OPTIONS}"
+            f"how = {how} not in READ_OPTIONS. "
+            f"Choose from {READ_FUNCTION_DICT.keys()}"
         )
-
-    validate_task_data(task_durations=task_durations_df)
+    task_durations_df = READ_FUNCTION_DICT[how](
+        task_durations_file_path, header=None, dtype=int, **kwargs
+    )
+    available_schedule_df = READ_FUNCTION_DICT[how](
+        available_schedule_file_path, header=None, dtype=bool, **kwargs
+    )
+    validate_single_column_int_data(dataframe=task_durations_df)
     validate_schedule_data(available_schedule=available_schedule_df)
-
     task_durations = task_durations_df.values[:, 0].tolist()
     available_schedule = available_schedule_df.values.tolist()
+    if task_rewards_file_path is None:
+        task_rewards = [1] * len(task_durations)
+    else:
+        task_rewards_df = pd.read_csv(
+            task_rewards_file_path, header=None, dtype=int, **kwargs
+        )
+        validate_single_column_int_data(dataframe=task_rewards_df)
+        task_rewards = task_durations_df.values[:, 0].tolist()
+    return task_durations, available_schedule, task_rewards
 
-    return task_durations, available_schedule
 
-
-def validate_task_data(task_durations: pd.DataFrame):
+def validate_single_column_int_data(dataframe: pd.DataFrame):
     assert (
-        task_durations.notnull().all().all()
-    ), f"Some task durations are missing: {task_durations}"
+        dataframe.notnull().all().all()
+    ), f"Some task durations are missing: {dataframe}"
     assert (
-        len(task_durations.columns) == 1
-    ), f"Multiple columns for task durations data: {task_durations}"
+        len(dataframe.columns) == 1
+    ), f"Multiple columns for task durations data: {dataframe}"
 
 
 def validate_schedule_data(available_schedule: pd.DataFrame):
