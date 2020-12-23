@@ -27,12 +27,12 @@ Concept
     For instance, suppose now
 
     .. math::
-       A = \begin{matrix}
+       A = \begin{bmatrix}
             0 & 6 & 1 & 2\\
             8 & 0 & 1 & 1\\
             0 & 2 & 0 & 10\\
             2 & 3 & 7 & 0\\
-           \end{matrix}
+           \end{bmatrix}
 
     Our job is to make pairs of people (no triplets, no singletons)
     such that the community as a whole is as happy as possible.
@@ -49,6 +49,16 @@ Concept
     In this case, we would like to match person 1 to 2 and
     3 to 4. This may seem trivial in this example,
     but imagine having a community of 1000 people!
+
+Usage
+-----
+.. dropdown:: Usage Solver
+
+    Still on my todo list :)
+
+.. dropdown:: Usage Generator
+
+    Still on my todo list :)
 
 Code
 ----

@@ -15,28 +15,32 @@ Concept
     The scheduler tries to assign jobs to agents such that it maximizes the reward
     of job execution while respecting the schedule of the agents.
 
-    For example, suppose we have two tasks with a duration of 2 and 3.
+    For example, suppose we have two tasks with a Duration of 2 and 3:
 
-    .. code-block:: python
+    .. math::
+        D = \begin{bmatrix}
+            2\\
+            3
+            \end{bmatrix}
 
-        task_durations = [2, 3]
-
-    For now, let's assume that for both tasks we get a reward of 5 if
+    For now, let's assume that for both tasks we get a Reward of 5 if
     we execute it:
 
-    .. code-block:: python
-
-        task_rewards = [5, 5]
+    .. math::
+        R = \begin{bmatrix}
+            5\\
+            5
+            \end{bmatrix}
 
     We also have two agents, which operate in the time interval [1, 2, ..., 5].
     Agent 1 is available during the first two timeslots, agent 2 during the last three.
+    Let us denote the agents' Availability by A:
 
-    .. code-block:: python
-
-        available_timeslots = [
-            [True, True, False, False, False],
-            [False, False, True, True, True],
-        ]
+    .. math::
+       A = \begin{bmatrix}
+            1 & 1 & 0 & 0 & 0\\
+            0 & 0 & 1 & 1 & 1
+            \end{bmatrix}
 
     We can immediately see that the optimal assignment is to assign the start of task 1 to
     agent 1 in timeslot 1, and task 2 to operator 2 in timeslot 3. This may seem
@@ -46,6 +50,10 @@ Concept
 
     - import the ``ScheduleSolver`` in your own code
     - use the command line to read problem description files and write to a solution file.
+
+Usage
+-----
+.. dropdown:: Usage Solver
 
     Import in sourcecode
     ~~~~~~~~~~~~~~~~~~~~
@@ -140,6 +148,11 @@ Concept
 
     Instead of csv, you can also use excel files. In that case, add the following
     flag: ``--read excel`` or ``--write excel``
+
+.. dropdown:: Usage Generator
+
+    Still on my todo list :)
+
 
 Code
 ----
