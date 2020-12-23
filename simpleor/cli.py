@@ -25,7 +25,7 @@ task_durations_path_option = click.option(
     "--durationsfile",
     type=str,
     default=str(PROJECT_DIRECTORY.joinpath("data/scheduler/task_durations.csv")),
-    help="Path to task_durations file",
+    help="Path to task_durations file (optional, default equal reward)",
 )
 
 available_schedule_path_option = click.option(
