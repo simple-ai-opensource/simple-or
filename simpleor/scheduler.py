@@ -13,20 +13,22 @@ from simpleor.utils import PROJECT_DIRECTORY
 logger = logging.getLogger(f"{__name__}")
 
 PROBLEM_NAME = "The_Schedule_Problem"
-# READ_OPTIONS = ["csv", "excel"]
 WRITE_OPTIONS = ["csv", "excel"]
 READ_FUNCTION_DICT = {"csv": pd.read_csv, "excel": pd.read_excel}
+PROBLEM_FORMULATION_NAMES = ["original", "manne_adapted"]
 
 
 @dataclass
 class ScheduleSolver(BaseSolver):
-    """Class for solving scheduling problems
+    f"""Class for solving scheduling problems
 
     Args:
         task_durations (list): integers with task durations
         available_timeslots (list): list of list of integers where 1
             indicates the agent is available and 0 not available.
         task_rewards (list): floats of reward received for completing task
+        problem_formulation (str): which Mixed Integer Programming
+            formulation to use. Choose from {PROBLEM_FORMULATION_NAMES}
 
     Typically, you would want to solve the problem after initialization
     and inspect the solution. E.g:
@@ -40,10 +42,14 @@ class ScheduleSolver(BaseSolver):
     task_durations: List[int]
     available_timeslots: List[List[int]]
     task_rewards: Optional[List[Union[int, float]]] = None
+    problem_formulation: str = "original"
 
     def __post_init__(self):
         self.validate_input(
-            self.task_durations, self.available_timeslots, self.task_rewards
+            self.task_durations,
+            self.available_timeslots,
+            self.task_rewards,
+            self.problem_formulation,
         )
         self.n_tasks = len(self.task_durations)
         self.n_agents = len(self.available_timeslots)
@@ -54,7 +60,7 @@ class ScheduleSolver(BaseSolver):
 
         self.pulp_problem = LpProblem(name=PROBLEM_NAME, sense=LpMaximize)
         self.objective = None
-        self.constraints_list = None
+        self.constraints_list = []
         self.lp_variables_created = False
         self.problem_is_set = False
         self.big_m = self.n_timeslots * self.n_agents * self.n_timeslots
@@ -62,13 +68,16 @@ class ScheduleSolver(BaseSolver):
         self.solution_df = None
 
     @classmethod
-    def validate_input(cls, task_durations, available_schedule, task_rewards):
+    def validate_input(
+        cls, task_durations, available_schedule, task_rewards, formulation
+    ):
         cls.validate_task_durations(task_durations)
         cls.validate_available_schedule(available_schedule)
         cls.validate_task_rewards(task_rewards)
         cls.validate_task_durations_and_rewards_compatible(
             task_durations=task_durations, task_rewards=task_rewards
         )
+        cls.validate_problem_formulation(formulation)
 
     @classmethod
     def validate_task_durations(cls, task_durations):
@@ -120,8 +129,19 @@ class ScheduleSolver(BaseSolver):
         if len(task_durations) != len(task_rewards):
             raise ValueError("task_durations and task_rewards not the same length")
 
-    def _set_variables(self):
-        logger.info("Setting variables...")
+    @classmethod
+    def validate_problem_formulation(cls, formulation: str):
+        if formulation not in PROBLEM_FORMULATION_NAMES:
+            cls._raise_problem_formulation_input_error(problem_formulation=formulation)
+
+    @staticmethod
+    def _raise_problem_formulation_input_error(problem_formulation: str):
+        raise ValueError(
+            f"formulation {problem_formulation} not recognized. "
+            f"choose from {PROBLEM_FORMULATION_NAMES}"
+        )
+
+    def _set_original_variables(self):
         self.start_names = [
             f"start_{i}_{j}_{k}"
             for i in range(self.n_tasks)
@@ -147,6 +167,17 @@ class ScheduleSolver(BaseSolver):
         self.active_variables_np = np.array(self.active_variables).reshape(
             (self.n_tasks, self.n_agents, self.n_timeslots)
         )
+
+    def _set_variables(self):
+        logger.info("Setting variables...")
+        if self.formulation == "original":
+            self._set_original_variables()
+        elif self.formulation == "manne_adapted":
+            pass
+        else:
+            self._raise_problem_formulation_input_error(
+                problem_formulation=self.problem_formulation
+            )
         self.lp_variables_created = True
 
     def _set_objective(self):
@@ -157,8 +188,7 @@ class ScheduleSolver(BaseSolver):
             logger.info("Setting objective with task rewards...")
             self.objective = lpDot(self.start_variables_np, self.task_rewards)
 
-    def _set_constraints(self):
-        logger.info("Setting constraints...")
+    def _set_original_constraints(self):
         self.max_one_start_per_task_constraints_list = (
             self._get_max_one_start_per_task_constraints()
         )
@@ -181,6 +211,17 @@ class ScheduleSolver(BaseSolver):
             *self.finish_if_started_constraint_list,
             *self.start_only_if_available_constraint_list,
         ]
+
+    def _set_constraints(self):
+        logger.info("Setting constraints...")
+        if self.problem_formulation == "original":
+            self._set_original_constraints()
+        elif self.problem_formulation == "manne_adapted":
+            pass
+        else:
+            self._raise_problem_formulation_input_error(
+                problem_formulation=self.formulation
+            )
 
     def _get_max_one_start_per_task_constraints(self) -> List:
         max_one_start_constraints = []
@@ -247,13 +288,14 @@ class ScheduleSolver(BaseSolver):
 
     def set_problem(self):
         """Sets the Linear Programming problem of the object.
-        This functions sets the variables, constraints, and objective."""
+        This functions sets the variables, constraints, and objective.
+        """
         logger.info("Setting LP problem...")
         if not self.lp_variables_created:
             self._set_variables()
         if self.objective is None:
             self._set_objective()
-        if self.constraints_list is None:
+        if not self.constraints_list:
             self._set_constraints()
 
         self.pulp_problem += self.objective
