@@ -1,6 +1,7 @@
 # scheduler.py
 
 from typing import List, Tuple, Optional, Union
+import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
@@ -9,11 +10,12 @@ import logging
 from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus, lpDot
 from simpleor.base import BaseSolver, BaseProblemGenerator
 from simpleor.utils import PROJECT_DIRECTORY
+from simpleor.monitoring import MonitorSingleton
 
 logger = logging.getLogger(f"{__name__}")
+monitor = MonitorSingleton.get_instance()
 
 PROBLEM_NAME = "The_Schedule_Problem"
-# READ_OPTIONS = ["csv", "excel"]
 WRITE_OPTIONS = ["csv", "excel"]
 READ_FUNCTION_DICT = {"csv": pd.read_csv, "excel": pd.read_excel}
 
@@ -561,7 +563,39 @@ def validate_schedule_data(available_schedule: pd.DataFrame):
     ), f"Some task schedule data is missing: {available_schedule}"
 
 
-if __name__ == "__main__":
+def execute_scheduling_experiment(
+    n_agents_list: List[int],
+    n_timeslots_list: List[int],
+    n_tasks_list: List[int],
+    repeat: int = 1,
+    save_directory: str = f"{PROJECT_DIRECTORY}/data/scheduler",
+    save_filename: str = "execution_times.csv",
+):
+    parameter_sets = itertools.product(n_agents_list, n_timeslots_list, n_tasks_list)
+    full_save_path = Path(save_directory).joinpath(Path(save_filename))
+
+    for parameter_set in parameter_sets:
+        n_agents, n_timeslots, n_tasks = parameter_set
+        schedule_problem_generator = ScheduleProblemGenerator(
+            n_agents=n_agents, n_timeslots=n_timeslots, n_tasks=n_tasks
+        )
+        for _ in range(repeat):
+            schedule_problem_generator.generate()
+            schedule_solver = ScheduleSolver(
+                task_durations=schedule_problem_generator.task_durations,
+                available_timeslots=schedule_problem_generator.available_timeslots,
+            )
+            solver_with_timer = monitor.add_execution_time_to_monitor_dataframe(
+                func=schedule_solver.solve,
+                dataframe_name="execution_time_df",
+                column_names=["n_agents", "n_timeslots", "n_tasks"],
+                column_values=[n_agents, n_timeslots, n_tasks],
+            )
+            solver_with_timer()
+            monitor.metrics["execution_time_df"].to_csv(full_save_path)
+
+
+def example_run():
     schedule_generator = ScheduleProblemGenerator(
         n_agents=5,
         n_timeslots=10,
@@ -601,4 +635,21 @@ if __name__ == "__main__":
         directory=str(PROJECT_DIRECTORY.joinpath("data/scheduler")),
         filename="solution.csv",
         how="csv",
+    )
+
+
+if __name__ == "__main__":
+    logger.info("Started experiment.")
+    experiment_with_timer = monitor.add_execution_time_to_monitor_dict(
+        func=execute_scheduling_experiment, key="full_experiment_execution_time"
+    )
+    experiment_with_timer(
+        n_agents_list=[10],
+        n_timeslots_list=[5, 10, 24],
+        n_tasks_list=[5, 10, 20, 30],
+        repeat=50,
+    )
+    logger.info(
+        "Experiment completed succesfully in "
+        f"{monitor.metrics['full_experiment_execution_time'][0]} seconds."
     )
