@@ -1,40 +1,58 @@
 # scheduler.py
 
+# TODO: problems are infeasible with new solver.
+
 from typing import List, Tuple, Optional, Union
+import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import logging
-from pulp import LpVariable, LpProblem, LpMaximize, lpSum, LpStatus, lpDot
+from pulp import (
+    LpVariable,
+    LpProblem,
+    LpMaximize,
+    lpSum,
+    LpStatus,
+    lpDot,
+    LpAffineExpression,
+)
 from simpleor.base import BaseSolver, BaseProblemGenerator
 from simpleor.utils import PROJECT_DIRECTORY
+from simpleor.monitoring import MonitorSingleton
 
 logger = logging.getLogger(f"{__name__}")
+monitor = MonitorSingleton.get_instance()
 
 PROBLEM_NAME = "The_Schedule_Problem"
-# READ_OPTIONS = ["csv", "excel"]
 WRITE_OPTIONS = ["csv", "excel"]
 READ_FUNCTION_DICT = {"csv": pd.read_csv, "excel": pd.read_excel}
+PROBLEM_FORMULATION_NAMES = ["original", "manne_adapted"]
+SCHEDULE_SOLVER_INFO_STRING = """
+    Typically, you would want to solve the problem after initialization
+    and inspect the solution. E.g:
+        schedule_solver = ScheduleSolverTimeIndex(task_durations, available_timeslots)
+        schedule_solver.solve()
+        print(schedule_solver.get_solution_status())
+        print(schedule_solver.get_objective_value())
+        df_solution = schedule_solver.get_solution(kind="dataframe")
+"""
 
 
 @dataclass
-class ScheduleSolver(BaseSolver):
-    """Class for solving scheduling problems
+class ScheduleSolverBase:
+    """Base class for common functionality of schedule solvers
+    We are interested in the setting where machines are not always
+    available and jobs have job-specific rewaurds.
 
     Args:
         task_durations (list): integers with task durations
         available_timeslots (list): list of list of integers where 1
             indicates the agent is available and 0 not available.
+            currently assumes wide format, where a row is a machine
+            and a column a time index
         task_rewards (list): floats of reward received for completing task
-
-    Typically, you would want to solve the problem after initialization
-    and inspect the solution. E.g:
-        schedule_solver = ScheduleSolver(task_durations, available_timeslots)
-        schedule_solver.solve()
-        print(schedule_solver.get_solution_status())
-        print(schedule_solver.get_objective_value())
-        df_solution = schedule_solver.get_solution(kind="dataframe")
     """
 
     task_durations: List[int]
@@ -54,12 +72,15 @@ class ScheduleSolver(BaseSolver):
 
         self.pulp_problem = LpProblem(name=PROBLEM_NAME, sense=LpMaximize)
         self.objective = None
-        self.constraints_list = None
+        self.constraints_list = []
         self.lp_variables_created = False
         self.problem_is_set = False
         self.big_m = self.n_timeslots * self.n_agents * self.n_timeslots
         self.solution = None
         self.solution_df = None
+        self.problem_is_set = False
+        self.solution = [None]
+        self.solution_df = pd.DataFrame(data=["unsolved"])
 
     @classmethod
     def validate_input(cls, task_durations, available_schedule, task_rewards):
@@ -87,6 +108,8 @@ class ScheduleSolver(BaseSolver):
     def validate_available_schedule(available_schedule):
         if not isinstance(available_schedule, list):
             raise ValueError("available_schedule must be list")
+        if not len(available_schedule) > 0:
+            raise ValueError("available_schedule is empty")
         for i, row in enumerate(available_schedule):
             if not isinstance(row, list):
                 raise ValueError("available_schedule first order elements must be list")
@@ -120,140 +143,39 @@ class ScheduleSolver(BaseSolver):
         if len(task_durations) != len(task_rewards):
             raise ValueError("task_durations and task_rewards not the same length")
 
+    @classmethod
+    def validate_problem_formulation(cls, problem_formulation: str):
+        if problem_formulation not in PROBLEM_FORMULATION_NAMES:
+            cls._raise_problem_formulation_input_error(
+                problem_formulation=problem_formulation
+            )
+
+    @staticmethod
+    def _raise_problem_formulation_input_error(problem_formulation: str):
+        raise ValueError(
+            f"formulation {problem_formulation} not recognized. "
+            f"choose from {PROBLEM_FORMULATION_NAMES}"
+        )
+
     def _set_variables(self):
-        logger.info("Setting variables...")
-        self.start_names = [
-            f"start_{i}_{j}_{k}"
-            for i in range(self.n_tasks)
-            for j in range(self.n_agents)
-            for k in range(self.n_timeslots)
-        ]
-        self.start_variables = [
-            LpVariable(name=start_name, cat="Binary") for start_name in self.start_names
-        ]
-        self.active_names = [
-            f"active_{i}_{j}_{k}"
-            for i in range(self.n_tasks)
-            for j in range(self.n_agents)
-            for k in range(self.n_timeslots)
-        ]
-        self.active_variables = [
-            LpVariable(name=active_name, cat="Binary")
-            for active_name in self.active_names
-        ]
-        self.start_variables_np = np.array(self.start_variables).reshape(
-            (self.n_tasks, self.n_agents, self.n_timeslots)
-        )
-        self.active_variables_np = np.array(self.active_variables).reshape(
-            (self.n_tasks, self.n_agents, self.n_timeslots)
-        )
-        self.lp_variables_created = True
+        raise NotImplementedError
 
     def _set_objective(self):
-        if self.task_rewards is None:
-            logger.info("Setting objective with equal reward for every task...")
-            self.objective = lpSum(self.start_variables_np)
-        else:
-            logger.info("Setting objective with task rewards...")
-            self.objective = lpDot(self.start_variables_np, self.task_rewards)
+        raise NotImplementedError
 
     def _set_constraints(self):
-        logger.info("Setting constraints...")
-        self.max_one_start_per_task_constraints_list = (
-            self._get_max_one_start_per_task_constraints()
-        )
-        self.operate_or_start_not_available_constraint_list = (
-            self._get_operate_and_start_not_allowed_constraints()
-        )
-        self.one_task_simultaneous_constraint_list = (
-            self._get_one_task_simultaneous_constraints()
-        )
-        self.finish_if_started_constraint_list = (
-            self._get_finish_if_started_constraints()
-        )
-        self.start_only_if_available_constraint_list = (
-            self._get_start_only_if_available()
-        )
-        self.constraints_list = [
-            *self.max_one_start_per_task_constraints_list,
-            *self.operate_or_start_not_available_constraint_list,
-            *self.one_task_simultaneous_constraint_list,
-            *self.finish_if_started_constraint_list,
-            *self.start_only_if_available_constraint_list,
-        ]
-
-    def _get_max_one_start_per_task_constraints(self) -> List:
-        max_one_start_constraints = []
-        for i in range(self.n_tasks):
-            max_one_start_constraints.append(
-                lpSum(self.start_variables_np[i, :, :]) <= 1
-            )
-        return max_one_start_constraints
-
-    def _get_operate_and_start_not_allowed_constraints(self) -> List:
-        not_allowed_constraint_list = []
-        for i in range(self.n_tasks):
-            for j in range(self.n_agents):
-                for t in range(self.n_timeslots):
-                    not_allowed_constraint_list.append(
-                        self.active_variables_np[i, j, t]
-                        <= self.available_timeslots_np[j, t]
-                    )
-                    not_allowed_constraint_list.append(
-                        self.start_variables_np[i, j, t]
-                        <= self.available_timeslots_np[j, t]
-                    )
-        return not_allowed_constraint_list
-
-    # TODO: are constraints above a subset of these below?
-    def _get_start_only_if_available(self) -> List:
-        constraints = []
-        for i, task_duration in enumerate(self.task_durations):
-            for j in range(self.n_agents):
-                latest_start = self.n_timeslots - task_duration
-                for t in range(latest_start + 1):
-                    start_not_allowed = (
-                        sum(self.available_timeslots_np[j, t : t + task_duration])
-                        < task_duration
-                    )
-                    if start_not_allowed:
-                        constraints.append(self.start_variables_np[i, j, t] == 0)
-                for t in range(latest_start + 1, self.n_timeslots):
-                    constraints.append(self.start_variables_np[i, j, t] == 0)
-        return constraints
-
-    def _get_finish_if_started_constraints(self) -> List:
-        finish_if_started_constraint_list = []
-        for i, current_task_duration in enumerate(self.task_durations):
-            current_latest_start = self.n_timeslots - self.task_durations[i]
-            for j in range(self.n_agents):
-                for t in range(current_latest_start + 1):
-                    t_range = t + current_task_duration
-                    for t_running in range(t, t_range):
-                        finish_if_started_constraint_list.append(
-                            self.active_variables_np[i, j, t_running]
-                            >= self.start_variables_np[i, j, t]
-                        )
-        return finish_if_started_constraint_list
-
-    def _get_one_task_simultaneous_constraints(self) -> List:
-        one_task_simultaneous_list = []
-        for j in range(self.n_agents):
-            for t in range(self.n_timeslots):
-                one_task_simultaneous_list.append(
-                    lpSum([self.active_variables_np[:, j, t]]) <= 1
-                )
-        return one_task_simultaneous_list
+        raise NotImplementedError
 
     def set_problem(self):
         """Sets the Linear Programming problem of the object.
-        This functions sets the variables, constraints, and objective."""
+        This functions sets the variables, constraints, and objective.
+        """
         logger.info("Setting LP problem...")
         if not self.lp_variables_created:
             self._set_variables()
         if self.objective is None:
             self._set_objective()
-        if self.constraints_list is None:
+        if not self.constraints_list:
             self._set_constraints()
 
         self.pulp_problem += self.objective
@@ -269,7 +191,6 @@ class ScheduleSolver(BaseSolver):
             self.set_problem()
         logger.info("Solving problem...")
         self.pulp_problem.solve()
-        self._set_solution()
 
     def get_status(self) -> str:
         """Returns the solution status after the problem has been tried to solve"""
@@ -287,29 +208,8 @@ class ScheduleSolver(BaseSolver):
     def _vectorized_get_solution_value(self):
         return np.vectorize(self._get_one_pulp_variable_value)
 
-    def _set_solution(self):
-        self.start_variables_solution = self._vectorized_get_solution_value(
-            self.start_variables_np
-        ).astype(int)
-        self.active_variables_solution = self._vectorized_get_solution_value(
-            self.active_variables_np
-        ).astype(int)
-        task_started, on_agent, at_time = np.where(self.start_variables_solution)
-
-        self.solution = [
-            (
-                task_started[i],
-                on_agent[i],
-                at_time[i],
-                at_time[i] + self.task_durations[task_started[i]],
-                self.task_durations[task_started[i]],
-            )
-            for i in range(len(task_started))
-        ]
-        self.solution_df = pd.DataFrame(
-            data=self.solution,
-            columns=["task", "agent", "start", "stop", "task_duration"],
-        )
+    def set_solution(self):
+        raise NotImplementedError
 
     def get_solution(self, kind: Optional[str] = "native"):
         """Get the solution of the scheduling problem
@@ -320,10 +220,9 @@ class ScheduleSolver(BaseSolver):
         Returns:
             the solution as native python object or dataframe
         """
-        if (self.solution is None) or (self.solution_df is None):
-            logger.info("solution is None. Trying to set the solution...")
+        if self.solution == [None]:
             try:
-                self._set_solution()
+                self.set_solution()
             except AttributeError as e:
                 logger.critical(
                     "Could not set solution. Did you set and solve the problem correctly?"
@@ -355,6 +254,359 @@ class ScheduleSolver(BaseSolver):
             raise ValueError(
                 f"how = {how} not in WRITE_OPTIONS. " f"Choose from {WRITE_OPTIONS}"
             )
+
+
+@dataclass
+class ScheduleSolverTimeIndex(ScheduleSolverBase, BaseSolver):  # type: ignore
+    f"""Class for solving scheduling problems with time indexed MILP formulation.
+    {SCHEDULE_SOLVER_INFO_STRING}
+    """
+
+    def _set_variables(self):
+        self.start_names = [
+            f"start_{i}_{j}_{t}"
+            for i in range(self.n_agents)
+            for j in range(self.n_tasks)
+            for t in range(self.n_timeslots)
+        ]
+        self.start_variables = [
+            LpVariable(name=start_name, cat="Binary") for start_name in self.start_names
+        ]
+        self.start_variables_np = np.array(self.start_variables).reshape(
+            (self.n_agents, self.n_tasks, self.n_timeslots)
+        )
+        self.lp_variables_created = True
+
+    def _set_objective(self):
+        if self.task_rewards is None:
+            logger.info("Setting objective with equal reward for every task...")
+            self.objective = lpSum(self.start_variables_np)
+        else:
+            logger.info("Setting objective with task rewards...")
+            self.objective = lpDot(
+                np.transpose(a=self.start_variables_np, axes=[1, 0, 2]),
+                self.task_rewards,
+            )
+
+    def _set_constraints(self):
+        self.max_one_start_per_task_constraints_list = (
+            self._get_max_one_start_per_task_constraints()
+        )
+        self.start_not_allowed_constraint_list = (
+            self._get_start_not_allowed_constraints()
+        )
+        self.one_task_simultaneous_constraint_list = (
+            self._get_one_task_simultaneous_constraints()
+        )
+        self.constraints_list = [
+            *self.max_one_start_per_task_constraints_list,
+            *self.start_not_allowed_constraint_list,
+            *self.one_task_simultaneous_constraint_list,
+        ]
+
+    def _get_max_one_start_per_task_constraints(self) -> List:
+        max_one_start_constraints = []
+        for j in range(self.n_tasks):
+            max_one_start_constraints.append(
+                lpSum(self.start_variables_np[:, j, :]) <= 1
+            )
+        return max_one_start_constraints
+
+    def _get_start_not_allowed_constraints(self) -> List:
+        not_allowed_constraint_list = []
+        for i in range(self.n_agents):
+            for j in range(self.n_tasks):
+                for t in range(self.n_timeslots):
+                    allowed = (
+                        self.available_timeslots_np[i, t : t + self.task_durations[j]]
+                    ).sum() == self.task_durations[j]
+                    if not allowed:
+                        not_allowed_constraint_list.append(
+                            self.start_variables_np[i, j, t] == 0
+                        )
+        return not_allowed_constraint_list
+
+    def _get_one_task_simultaneous_constraints(self) -> List:
+        one_task_simultaneous_list = []
+        task_durations_np = np.array(self.task_durations)
+        for i in range(self.n_agents):
+            for t in range(self.n_timeslots):
+                min_time_indices = t - task_durations_np + 1
+                min_time_indices[min_time_indices < 0] = 0
+                relevant_start_variables = []
+                for j, min_time_index in enumerate(min_time_indices):
+                    relevant_start_variables.append(
+                        self.start_variables_np[i, j, min_time_index : t + 1]
+                    )
+                one_task_simultaneous_list.append(lpSum(relevant_start_variables) <= 1)
+        return one_task_simultaneous_list
+
+    def set_solution(self):
+        self.start_variables_solution = self._vectorized_get_solution_value(
+            self.start_variables_np
+        ).astype(int)
+        on_agent, task_started, at_time = np.where(self.start_variables_solution)
+
+        self.solution = [
+            (
+                task_started[i],
+                on_agent[i],
+                at_time[i],
+                at_time[i] + self.task_durations[task_started[i]],
+                self.task_durations[task_started[i]],
+            )
+            for i in range(len(task_started))
+        ]
+        self.solution_df = pd.DataFrame(
+            data=self.solution,
+            columns=["task", "agent", "start", "stop", "task_duration"],
+        )
+
+
+class ScheduleSolverContinuousStartTime(ScheduleSolverBase, BaseSolver):  # type: ignore
+    f"""Class for solving scheduling problems with continuous start time MILP formulation.
+
+    NOT CORRECT YET!
+    {SCHEDULE_SOLVER_INFO_STRING}
+    """
+
+    def _set_variables(self):
+        self.start_names = [
+            f"start_{i}_{j}" for i in range(self.n_agents) for j in range(self.n_tasks)
+        ]
+        self.job_precedence_names = [
+            f"job_j_precedes_k_{i}_{j}_{k}"
+            for i in range(self.n_agents)
+            for j in range(self.n_tasks)
+            for k in range(self.n_tasks)
+        ]
+        self.job_is_chosen_names = [
+            f"job_is_chosen_{i}_{j}"
+            for i in range(self.n_agents)
+            for j in range(self.n_tasks)
+        ]
+        auxiliary_variables_execution_names = [
+            f"aux_execution_variable_{i}_{j}_{k}"
+            for i in range(self.n_agents)
+            for j in range(self.n_tasks)
+            for k in ["rightway", "leftway"]
+        ]
+        self.start_variables = [
+            LpVariable(name=start_name, cat="Integer")
+            for start_name in self.start_names
+        ]
+        self.job_precedence_variables = [
+            LpVariable(name=job_precedence_name, cat="Binary")
+            for job_precedence_name in self.job_precedence_names
+        ]
+        self.job_is_chosen_variables = [
+            LpVariable(name=job_is_chosen_name, cat="Binary")
+            for job_is_chosen_name in self.job_is_chosen_names
+        ]
+        self.auxiliary_job_is_chosen_variables = [
+            LpVariable(name=name, cat="Binary")
+            for name in auxiliary_variables_execution_names
+        ]
+        self.start_variables_np = np.array(self.start_variables).reshape(
+            (self.n_agents, self.n_tasks)
+        )
+        self.job_precedence_variables_np = np.array(
+            self.job_precedence_variables
+        ).reshape((self.n_agents, self.n_tasks, self.n_tasks))
+        self.job_is_chosen_variables_np = np.array(
+            self.job_is_chosen_variables
+        ).reshape((self.n_agents, self.n_tasks))
+        self.auxiliary_job_is_chosen_variables_np = np.array(
+            self.auxiliary_job_is_chosen_variables
+        ).reshape((self.n_agents, self.n_tasks, 2))
+        self.auxiliary_start_variables_counter = 0
+        self.lp_variables_created = True
+
+    def _set_objective(self):
+        self.objective = lpDot(self.job_is_chosen_variables, self.task_rewards)
+
+    def _get_no_jobs_simultaneous(self):
+        no_jobs_simultanoues_constraint_list = []
+        for i in range(self.n_agents):
+            for j in range(self.n_tasks):
+                for k in range(j + 1, self.n_tasks):
+                    no_jobs_simultanoues_constraint_list.append(
+                        self.start_variables_np[i, j]
+                        >= self.start_variables_np[i, k]
+                        + self.task_durations[k]
+                        - self.big_m * self.job_precedence_variables_np[i, j, k]
+                    )
+                    no_jobs_simultanoues_constraint_list.append(
+                        self.start_variables_np[i, k]
+                        >= self.start_variables_np[i, j]
+                        + self.task_durations[j]
+                        - self.big_m * (1 - self.job_precedence_variables_np[i, j, k])
+                    )
+        return no_jobs_simultanoues_constraint_list
+
+    def _get_started_and_chosen_interaction_constraints(self):
+        if_started_then_chosen_constraint_list = []
+        for i in range(self.n_agents):
+            for j in range(self.n_tasks):
+                if_started_then_chosen_constraint_list += [
+                    self.start_variables_np[i, j]
+                    >= -self.big_m * self.auxiliary_job_is_chosen_variables_np[i, j, 0],
+                    self.job_is_chosen_variables_np[i, j]
+                    <= self.big_m
+                    * (1 - self.auxiliary_job_is_chosen_variables_np[i, j, 0]),
+                ]
+                if_started_then_chosen_constraint_list += [
+                    self.job_is_chosen_variables_np[i, j]
+                    >= -self.big_m * self.auxiliary_job_is_chosen_variables_np[i, j, 1],
+                    self.start_variables_np[i, j]
+                    <= self.big_m
+                    * (1 - self.auxiliary_job_is_chosen_variables_np[i, j, 1]),
+                ]
+                # if_started_then_chosen_constraint_list += [
+                #     self.start_variables_np[i, j] <= self.big_m * aux_variables_execution_np[i, j] - 0.0001,
+                #     self.job_is_chosen_variables[j] >= 1 - self.big_m * (1 - aux_variables_execution_np[i, j])
+                # ]
+        return if_started_then_chosen_constraint_list
+
+    def _get_availability_start_and_stop(self) -> pd.DataFrame:
+        start_stop_calculation_matrix = np.concatenate(
+            (self.available_timeslots, np.zeros((self.n_agents, 1), dtype=int)), axis=1
+        )
+        difference_matrix = np.diff(start_stop_calculation_matrix, axis=1)
+        start_and_stop_indicator_matrix = np.concatenate(
+            (self.available_timeslots_np[:, 0].reshape(-1, 1), difference_matrix),
+            axis=1,
+        )  # a 1 indicates a start in that timeslot, a -1 a stop in the previous timeslot
+        agent_start_available_index, timeslot_start_available_index = np.where(
+            start_and_stop_indicator_matrix == 1
+        )
+        agent_stop_available_index, timeslot_stop_available_index = np.where(
+            start_and_stop_indicator_matrix == -1
+        )
+        assert (agent_start_available_index == agent_stop_available_index).all()
+        availability_long_df = pd.DataFrame(
+            data={
+                "agent": agent_start_available_index,
+                "start_available": timeslot_start_available_index,
+                "stop_available": timeslot_stop_available_index,
+            }
+        )
+        return availability_long_df
+
+    def _get_current_auxiliary_start_variables(
+        self, possible_timeslots_df: pd.DataFrame
+    ):
+        new_count = self.auxiliary_start_variables_counter + len(possible_timeslots_df)
+        auxiliary_variables_names = [
+            f"auxiliary_variable_{i}"
+            for i in range(self.auxiliary_start_variables_counter, new_count)
+        ]
+        auxiliary_variables = [
+            LpVariable(name=name, cat="Binary") for name in auxiliary_variables_names
+        ]
+        self.auxiliary_start_variables_counter = new_count
+        return auxiliary_variables
+
+    def _get_start_not_allowed_per_task_and_agent(
+        self, availability_agent, start_variable_task_agent, task_duration
+    ):
+        job_space = (
+            availability_agent["stop_available"] - availability_agent["start_available"]
+        )
+        job_fits = job_space >= task_duration
+        possible_timeslots_df = availability_agent[job_fits]
+        possible_timeslots_df["latest_start"] = (
+            possible_timeslots_df["stop_available"] - task_duration
+        )
+        if possible_timeslots_df.empty:
+            return [start_variable_task_agent == -self.big_m]
+
+        possible_timeslots_df = possible_timeslots_df.reset_index()
+        auxiliary_variables = self._get_current_auxiliary_start_variables(
+            possible_timeslots_df=possible_timeslots_df
+        )
+        left_bounds = [
+            start_variable_task_agent
+            >= LpAffineExpression(
+                slot["start_available"] * auxiliary_variables[i]
+                - (1 - auxiliary_variables[i]) * self.big_m
+            )
+            for i, slot in possible_timeslots_df.iterrows()
+        ]
+        right_bounds = [
+            start_variable_task_agent
+            <= LpAffineExpression(
+                slot["latest_start"] * auxiliary_variables[i]
+                + (1 - auxiliary_variables[i]) * self.big_m
+            )
+            for i, slot in possible_timeslots_df.iterrows()
+        ]
+        choose_one_interval = [lpSum(auxiliary_variables) == 1]
+        constraints = left_bounds + right_bounds + choose_one_interval
+        return constraints
+
+    @staticmethod
+    def _append_negative_availability_interval_per_agent(
+        availability_long_df_agent: pd.DataFrame, lower_bound: int = -99999
+    ) -> pd.DataFrame:
+        return pd.concat(
+            [
+                availability_long_df_agent,
+                pd.DataFrame(
+                    {
+                        "agent": availability_long_df_agent.name,
+                        "start_available": [lower_bound],
+                        "stop_available": [lower_bound + 1000],
+                    }
+                ),
+            ]
+        )
+
+    def _get_start_not_allowed_constraints_manne_adapted(self):
+        start_not_allowed_constraints = []
+        availability_long_df = self._get_availability_start_and_stop()
+        availability_long_df = (
+            availability_long_df.groupby("agent")
+            .apply(
+                lambda x: self._append_negative_availability_interval_per_agent(
+                    availability_long_df_agent=x
+                )
+            )
+            .reset_index(drop=True)
+        )
+
+        agent_availability_groups = availability_long_df.groupby("agent")
+        for task_index, task_duration in enumerate(self.task_durations):
+            for agent_index, availability_agent in agent_availability_groups:
+                start_not_allowed_constraints_per_task_and_agent = self._get_start_not_allowed_per_task_and_agent(
+                    availability_agent=availability_agent,
+                    start_variable_task_agent=self.start_variables_np[
+                        agent_index, task_index
+                    ],
+                    task_duration=task_duration,
+                )
+                start_not_allowed_constraints += (
+                    start_not_allowed_constraints_per_task_and_agent
+                )
+        return start_not_allowed_constraints
+
+    def _set_constraints(self, problem_formulation: str = "original"):
+        logger.info("Setting constraints...")
+        # no_jobs_simultaneous_constraint_list = self._get_no_jobs_simultaneous()  # TODO: does not work in this setting
+        start_not_allowed_constraints = (
+            self._get_start_not_allowed_constraints_manne_adapted()
+        )
+        started_and_chosed_interaction_constraints = (
+            self._get_started_and_chosen_interaction_constraints()
+        )
+        self.constraints_list = [
+            # *no_jobs_simultaneous_constraint_list,
+            *start_not_allowed_constraints,
+            *started_and_chosed_interaction_constraints,
+        ]
+
+    def _set_solution(self, problem_formulation: str = "original"):
+        raise NotImplementedError
 
 
 @dataclass
@@ -501,7 +753,7 @@ def read_schedule_problem(
     task_rewards_file_path: Optional[str] = None,
     **kwargs,
 ) -> Tuple:
-    """ Reads scheduling problem data from csv files
+    """Reads scheduling problem data from csv files
 
     Args:
         task_durations_file_path (str): path to the task durations file
@@ -561,17 +813,49 @@ def validate_schedule_data(available_schedule: pd.DataFrame):
     ), f"Some task schedule data is missing: {available_schedule}"
 
 
-if __name__ == "__main__":
+def execute_scheduling_experiment(
+    n_agents_list: List[int],
+    n_timeslots_list: List[int],
+    n_tasks_list: List[int],
+    repeat: int = 1,
+    save_directory: str = f"{PROJECT_DIRECTORY}/data/scheduler",
+    save_filename: str = "execution_times.csv",
+):
+    parameter_sets = itertools.product(n_agents_list, n_timeslots_list, n_tasks_list)
+    full_save_path = Path(save_directory).joinpath(Path(save_filename))
+
+    for parameter_set in parameter_sets:
+        n_agents, n_timeslots, n_tasks = parameter_set
+        schedule_problem_generator = ScheduleProblemGenerator(
+            n_agents=n_agents, n_timeslots=n_timeslots, n_tasks=n_tasks
+        )
+        for _ in range(repeat):
+            schedule_problem_generator.generate()
+            schedule_solver = ScheduleSolverTimeIndex(
+                task_durations=schedule_problem_generator.task_durations,
+                available_timeslots=schedule_problem_generator.available_timeslots,
+            )
+            solver_with_timer = monitor.add_execution_time_to_monitor_dataframe(
+                func=schedule_solver.solve,
+                dataframe_name="execution_time_df",
+                column_names=["n_agents", "n_timeslots", "n_tasks"],
+                column_values=[n_agents, n_timeslots, n_tasks],
+            )
+            solver_with_timer()
+            monitor.metrics["execution_time_df"].to_csv(full_save_path)
+
+
+def example_run():
     schedule_generator = ScheduleProblemGenerator(
-        n_agents=5,
-        n_timeslots=10,
-        n_tasks=7,
+        n_agents=50,
+        n_timeslots=24,
+        n_tasks=100,
         min_task_duration=1,
         max_task_duration=6,
         min_block_duration=2,
         max_block_duration=4,
     )
-    schedule_generator.generate(generate_rewards=True, min_reward=1, max_reward=10)
+    schedule_generator.generate()
 
     logger.info("==============================================")
     logger.info("PROBLEM")
@@ -580,13 +864,14 @@ if __name__ == "__main__":
         f"available_timeslots:\n{np.array(schedule_generator.available_timeslots)}\n\n"
     )
     logger.info("----------------------------------------------")
-    schedule_solver = ScheduleSolver(
+    schedule_solver = ScheduleSolverTimeIndex(
         task_durations=schedule_generator.task_durations,
         available_timeslots=schedule_generator.available_timeslots,
         task_rewards=schedule_generator.task_rewards,
     )
     schedule_solver.set_problem()
     schedule_solver.solve()
+    schedule_solver.set_solution()
     logger.info("----------------------------------------------")
     logger.info(f"solution status: {schedule_solver.get_status()}\n\n")
     logger.info(
@@ -601,4 +886,22 @@ if __name__ == "__main__":
         directory=str(PROJECT_DIRECTORY.joinpath("data/scheduler")),
         filename="solution.csv",
         how="csv",
+    )
+
+
+if __name__ == "__main__":
+    logger.info("Started experiment.")
+    run_experiment_with_timer = monitor.add_execution_time_to_monitor_dict(
+        func=execute_scheduling_experiment, key="full_experiment_execution_time"
+    )
+    run_experiment_with_timer(
+        n_agents_list=[2, 4, 6, 8, 10],
+        n_timeslots_list=[5, 10, 24],
+        n_tasks_list=[5, 10, 20, 30],
+        repeat=50,
+        save_filename="execution_times_new_formulation.csv",
+    )
+    logger.info(
+        "Experiment completed succesfully in "
+        f"{monitor.metrics['full_experiment_execution_time'][0]} seconds."
     )
