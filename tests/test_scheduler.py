@@ -9,7 +9,7 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 from unittest.mock import patch
 from simpleor.scheduler import (
-    ScheduleSolver,
+    ScheduleSolverTimeIndex,
     ScheduleProblemGenerator,
     read_schedule_problem,
 )
@@ -50,8 +50,12 @@ test_solution = [  # task duration, available_schedule
 pytest_parameters = list(zip(test_input, test_solution))
 
 
-@patch("simpleor.scheduler.ScheduleSolver._vectorized_get_solution_value")
-def test__set_solution(mock_vect_get_solution_value):
+def check_arrays_equal(array_1, array_2):
+    return len(array_1) == len(array_2) and sorted(array_1) == sorted(array_2)
+
+
+@patch("simpleor.scheduler.ScheduleSolverTimeIndex._vectorized_get_solution_value")
+def test_set_solution(mock_vect_get_solution_value):
     task_durations = [7, 4, 3]
     available_timeslots = [
         [1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
@@ -59,23 +63,26 @@ def test__set_solution(mock_vect_get_solution_value):
     ]
     mock_start_variables_np = np.array(
         [
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
-            [[0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0]],
+            [
+                np.zeros(shape=(10,), dtype=int).tolist(),
+                [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                np.zeros(shape=(10,), dtype=int).tolist(),
+            ],
+            [
+                np.zeros(shape=(10,), dtype=int).tolist(),
+                np.zeros(shape=(10,), dtype=int).tolist(),
+                [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            ],
         ]
     )
-    mock_active_variables_np = mock_start_variables_np  # irrelevant
-    mock_vect_get_solution_value.side_effect = [
-        mock_start_variables_np,
-        mock_active_variables_np,
-    ]
+    mock_vect_get_solution_value.side_effect = [mock_start_variables_np]
 
-    mock_solver = ScheduleSolver(
+    mock_solver = ScheduleSolverTimeIndex(
         task_durations=task_durations, available_timeslots=available_timeslots
     )
     mock_solver.start_variables_np = None
     mock_solver.active_variables_np = None
-    mock_solver._set_solution()
+    mock_solver.set_solution()
 
     expected = pd.DataFrame(
         data=[[1, 0, 1, 5, 4], [2, 1, 2, 5, 3]],
@@ -85,16 +92,19 @@ def test__set_solution(mock_vect_get_solution_value):
 
 
 @pytest.mark.parametrize("test_input, expected", pytest_parameters)
-def test_schedule_solver(test_input, expected):
+def test_time_index_schedule_solver_static(test_input, expected):
     logger.info("Testing solver...")
     logger.info("Hardcoded tests...")
-    schedule_solver = ScheduleSolver(
+    schedule_solver = ScheduleSolverTimeIndex(
         task_durations=test_input[0], available_timeslots=test_input[1]
     )
     schedule_solver.solve()
+    schedule_solver.set_solution()
     solution = schedule_solver.get_solution()
-    assert solution == expected
+    check_arrays_equal(solution, expected)
 
+
+def test_time_index_schedule_solver_random():
     # Random generation
     logger.info("Random tests...")
     generator_parameters = [*[[3, 5, 7]] * 10]  # operators, timeslots, tasks
@@ -102,12 +112,13 @@ def test_schedule_solver(test_input, expected):
         logger.info(f"Now at test {i + 1}/{len(generator_parameters)}...")
         generator = ScheduleProblemGenerator(*args)
         generator.generate()
-        solver = ScheduleSolver(
+        solver = ScheduleSolverTimeIndex(
             task_durations=generator.task_durations,
             available_timeslots=generator.available_timeslots,
         )
         solver.set_problem()
         solver.solve()
+        solver.set_solution()
         solution_df = solver.get_solution(kind="dataframe")
         agent_busy_np = np.zeros((args[0], args[1]), dtype=int)
 
@@ -122,7 +133,7 @@ def test_schedule_solver_with_reward():
     task_durations = [4, 2, 2, 2]
     available_timeslots = [[1, 1, 1, 1]]
     task_rewards = [100, 1, 2, 1]
-    schedule_solver = ScheduleSolver(
+    schedule_solver = ScheduleSolverTimeIndex(
         task_durations=task_durations,
         available_timeslots=available_timeslots,
         task_rewards=task_rewards,

@@ -9,7 +9,7 @@ from simpleor.scheduler import (
     READ_FUNCTION_DICT,
     WRITE_OPTIONS,
     read_schedule_problem,
-    ScheduleSolver,
+    ScheduleSolverTimeIndex,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ def schedule(
         task_rewards_file_path=rewardsfile,
         how=read,
     )
-    solver = ScheduleSolver(
+    solver = ScheduleSolverTimeIndex(
         task_durations=task_durations,
         available_timeslots=available_timeslots,
         task_rewards=task_rewards,
