@@ -46,9 +46,9 @@ Concept
     agent 1 in timeslot 1, and task 2 to operator 2 in timeslot 3. This may seem
     trivial, but imagine having 1000 tasks and 100 agents!
 
-    Luckily, we can use the ScheduleSolver. You can:
+    Luckily, we can use the ``simpleor.scheduler`` module. You can:
 
-    - import the ``ScheduleSolver`` in your own code
+    - import a solver in your own code
     - use the command line to read problem description files and write to a solution file.
 
 Usage
@@ -61,9 +61,9 @@ Usage
 
     .. code-block:: python
 
-        from simpleor.scheduler import ScheduleSolver
+        from simpleor.scheduler import ScheduleSolverTimeIndex
 
-        schedule_solver = ScheduleSolver(
+        schedule_solver = ScheduleSolverTimeIndex(
             task_durations=task_durations,
             available_timeslots=available_timeslots,
             task_rewards=task_rewards
@@ -71,7 +71,7 @@ Usage
 
 
     Since we are now in programming language, we start counting from 0, not 1.
-    Calling .solve() on the ScheduleSolver instance will run an Integer Linear
+    Calling .solve() on the ScheduleSolverTimeIndex instance will run an Integer Linear
     Programming solver on the problem description.
 
     .. code-block:: python
